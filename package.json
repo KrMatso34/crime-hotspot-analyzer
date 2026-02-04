@@ -1,0 +1,13 @@
+{
+  "name": "nodejs-prototype",
+  "version": "1.0.0",
+  "description": "Node.js + Express prototype",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "@turf/turf": "^6.5.0"
+  }
+}
