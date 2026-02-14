@@ -89,10 +89,7 @@ export default function MapView() {
 							<>
 								<Table title='Route info' data={routeData}/>
 							</>
-						) : (<></>) 
-
-						}
-						
+						) : (<></>)}
 					</>
 					
 				)}

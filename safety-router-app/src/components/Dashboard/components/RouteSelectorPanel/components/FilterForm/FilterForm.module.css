@@ -1,0 +1,36 @@
+
+.filterForm {
+	
+}
+
+.incidentTypeGrid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	padding: 8px;
+}
+
+.longButton {
+	padding: 3px 12px;
+	border: 1px solid black;
+	border-radius: 8px;
+	margin-right: 30px;
+	margin-bottom: 8px;
+	display: flex;
+	justify-content: space-between;
+	cursor: pointer;
+	user-select: none;
+}
+
+.longButton.active {
+	font-weight: bold;
+	border-width: 2px;
+	padding: 2px 11px;
+}
+
+.longButton:hover {
+	background-color: #bbb;
+}
+
+.routeComparisonButtonInfo span {
+	margin-left: 8px
+}
