@@ -1,0 +1,44 @@
+Map Library Selection (Sprint 3)
+
+Libraries Considered
+- Leaflet
+- Mapbox GL JS
+
+Both libraries were evaluated from a design and feasibility perspective, focusing on
+licensing, learning curve, and long-term project sustainability 
+
+Leaflet (Selected)
+
+Advantages
+- Fully open-source with no usage-based pricing
+- No API keys or billing dependencies
+- Simple and predictable licensing model
+- Lower learning curve for basic and intermediate map features
+- Well-supported in React environments
+- Sufficient for rendering points, clusters, and polygons required by the project
+
+Tradeoffs
+- Fewer built-in advanced visualization features compared to Mapbox
+- Some performance optimizations require plugins rather than being native
+
+Mapbox GL JS (Not Selected)
+
+Considerations
+- Usage-based pricing and API token requirements introduce cost uncertainty
+- Licensing constraints complicate long-term or public deployment
+- Steeper learning curve to achieve comparable outputs
+- Advanced features exceed current project requirements
+
+While Mapbox offers powerful visualization capabilities, achieving similar outputs
+to Leaflet would require additional configuration, higher complexity, and ongoing
+license management without clear benefits for the current scope.
+
+Decision
+
+Leaflet was selected as the mapping library for the project.
+
+Rationale
+- Prioritized predictable cost, simple licensing, and ease of development
+- Avoided usage-based pricing and external dependency risks
+- Leaflet meets all current visualization requirements without unnecessary complexity
+- Better alignment with student project constraints and maintainability goals
