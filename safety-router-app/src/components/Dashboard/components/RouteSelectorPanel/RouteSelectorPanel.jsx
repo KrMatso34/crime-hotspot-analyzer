@@ -7,11 +7,11 @@ import LiveAlertsDisplay from './components/LiveAlertsDisplay/LiveAlertsDisplay'
 import styles from './RouteSelectorPanel.module.css';
 import clsx from 'clsx';
 
-export default function RouteSelectorPanel({ setCamCoords }) {
+export default function RouteSelectorPanel({ setCamCoords, setRouteCoords }) {
 
 	return (
 		<div className={clsx(styles.routeSelectorPanel)}>
-			<DestinationForm setCamCoords={setCamCoords}/>
+			<DestinationForm setCamCoords={setCamCoords} setRouteCoords={setRouteCoords}/>
 
 			<div className={clsx(styles.detailsContainer)}>
 				<FilterForm/>

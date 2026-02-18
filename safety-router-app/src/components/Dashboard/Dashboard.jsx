@@ -12,17 +12,22 @@ import clsx from 'clsx';
 export default function Dashboard() {
 	const [camCoords, setCamCoords] = useState([51.505, -0.09]);
 	const [markerInfo, setMarkerInfo] = useState({});
-
-	
-	
+	const [routeCoords, setRouteCoords] = useState([]);
 	
 	return (
 		<div className={clsx(styles.dashboard)}>
 			<Header/>
 			<div className={clsx(styles.content)}>
-				<RouteSelectorPanel setCamCoords={(coords, info) => {setCamCoords(coords); setMarkerInfo(info)}}/>
+				<RouteSelectorPanel 
+					setCamCoords={(coords, info) => {setCamCoords(coords); setMarkerInfo(info)}}
+					setRouteCoords={setRouteCoords}
+				/>
 				
-				<Map center={camCoords} markerInfo={markerInfo}/>
+				<Map 
+					center={camCoords} 
+					markerInfo={markerInfo} 
+					routeCoords={routeCoords}
+				/>
 				<QuickRouteSelectPanel/>
 				<StartNavigationPanel/>
 			</div>
