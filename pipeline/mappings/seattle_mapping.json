@@ -1,0 +1,30 @@
+{
+    "source_system": "seattle_csv",
+    "source_city": "Seattle",
+  
+    "event_type": "offense_category",
+    "event_subtype": "offense_sub_category",
+    "nibrs_code": "nibrs_offense_code",
+    "nibrs_description": "nibrs_offense_code_description",
+  
+    "occurred_at": "offense_date",
+    "reported_at": "report_date_time",
+  
+    "location.lat": "latitude",
+    "location.lon": "longitude",
+  
+    "address_line": "block_address",
+    "neighborhood": "neighborhood",
+  
+    "case_number": "report_number",
+  
+    "meta.beat": "beat",
+    "meta.precinct": "precinct",
+    "meta.sector": "sector",
+    "meta.reporting_area": "reporting_area",
+  
+    "meta.group_a_b": "nibrs_group_a_b",
+    "meta.crime_against": "nibrs_crime_against_category",
+    "meta.shooting_type": "shooting_type_group",
+    "meta.offense_id": "offense_id"
+  }
