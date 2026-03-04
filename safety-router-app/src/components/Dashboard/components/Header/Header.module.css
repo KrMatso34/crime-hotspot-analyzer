@@ -2,8 +2,9 @@
 .header {
 	width: 100%;
 	top: 0;
-	background-color: #ccc;
-	border-bottom: 2px solid #999;
+	color: var(--text-primary);
+	background-color: var(--bg-primary);
+	border-bottom: 2px solid var(--border-primary);
 }
 
 .content {

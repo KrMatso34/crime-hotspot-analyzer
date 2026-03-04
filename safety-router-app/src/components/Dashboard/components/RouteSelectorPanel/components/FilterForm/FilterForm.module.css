@@ -11,7 +11,8 @@
 
 .longButton {
 	padding: 3px 12px;
-	border: 1px solid black;
+	border: 2px solid var(--border-primary);
+	color: var(--text-secondary);
 	border-radius: 8px;
 	margin-right: 30px;
 	margin-bottom: 8px;
@@ -28,7 +29,7 @@
 }
 
 .longButton:hover {
-	background-color: #bbb;
+	background-color: var(--border-primary);
 }
 
 .routeComparisonButtonInfo span {

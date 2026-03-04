@@ -3,6 +3,9 @@ import express from 'express';
 
 const router = express.Router();
 
+router.get('/incidentData', funcs.getIncidentPoints);
+
+
 /** Make optimized navigation route
  * @route	POST /
  * @access	Public
@@ -23,5 +26,6 @@ const router = express.Router();
  * @returns {RouteNavigationData}
  */
 router.post('/', funcs.getRoute);
+
 
 export default router;

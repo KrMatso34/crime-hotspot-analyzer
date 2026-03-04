@@ -7,7 +7,7 @@ import AddressInput from './components/AddressInput/AddressInput';
 import styles from './DestinationForm.module.css';
 import clsx from 'clsx';
 
-export default function DestinationForm({ setCamCoords, setRouteCoords }) {
+export default function DestinationForm({ setCamCoords, setRoute }) {
 	const [origin, setOrigin] = useState('');
 	const [destination, setDestination] = useState('');
 
@@ -31,7 +31,7 @@ export default function DestinationForm({ setCamCoords, setRouteCoords }) {
 			// TODO: Error handling if geocode service cannot find route
 			const route = await fetchRoute(origin, destination);
 
-			setRouteCoords(route);
+			setRoute(route);
 		} catch (err) {
 			console.error(err);
 		}
