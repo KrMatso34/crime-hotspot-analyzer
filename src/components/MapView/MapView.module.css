@@ -1,0 +1,17 @@
+
+
+.tableGrid {
+	display: grid;
+	grid-template-columns: 0.25fr 1fr;
+	font-size: 1.1em;
+	border: 2px solid black;
+}
+
+.tableGridCell {
+	padding: 8px;
+	background-color: #ccc;
+}
+
+.tableGridCellEven {
+	background-color: #eee;
+}
