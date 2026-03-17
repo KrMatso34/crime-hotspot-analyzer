@@ -1,0 +1,23 @@
+{
+    "source_system": "kingcounty_api",
+    "source_city": "King County",
+  
+    "event_type": "nibrs_code_name",
+    "event_subtype": "nibrs_code_name",
+    "nibrs_code": "nibrs_code",
+    "nibrs_description": "nibrs_code_name",
+  
+    "occurred_at": "incident_datetime",
+    "reported_at": "created_at",
+  
+    "address_line": "block_address",
+    "city": "city",
+    "state": "state",
+    "zip": "zip",
+    "case_number": "case_number",
+  
+    "meta.source_id": "id",
+    "meta.updated_at": "updated_at",
+    "meta.hour_of_day": "hour_of_day",
+    "meta.day_of_week": "day_of_week"
+  }

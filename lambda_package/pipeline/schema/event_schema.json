@@ -1,0 +1,15 @@
+{
+    "event_id": "string",
+    "event_type": "string",
+    "event_subtype": "string",
+    "occurred_at_utc": "string",
+    "reported_at_utc": "string",
+    "source_city": "string",
+    "source_system": "string",
+    "location": {
+      "lat": "number",
+      "lon": "number"
+    },
+    "address_line": "string",
+    "properties": "object"
+  }

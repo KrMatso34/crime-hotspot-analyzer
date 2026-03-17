@@ -1,0 +1,10 @@
+ETL Pipeline Report
+run_time_utc: 2026-03-04T23:18:39.280429+00:00
+
+mapping_used: seattle_mapping.json
+
+rows_read: 1000
+rows_written: 849
+rows_dropped_missing_required: 0
+rows_dropped_invalid_coords: 151
+bias_fields_removed_total: 8490

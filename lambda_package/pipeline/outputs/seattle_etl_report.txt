@@ -1,0 +1,11 @@
+API ETL Pipeline Report
+run_time_utc: 2026-03-06T18:28:59.683649+00:00
+
+source: seattle
+mapping_used: seattle_mapping.json
+
+rows_read: 5
+rows_written: 5
+rows_dropped_missing_required: 0
+rows_dropped_invalid_coords: 0
+bias_fields_removed_total: 25

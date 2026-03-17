@@ -1,7 +1,5 @@
 """
-ETL Pipeline (Sprint 4 ready)
-----------------------------
-Purpose:
+
 - Take raw CSV files from storage (local for now; S3 later)
 - Map dataset-specific fields into a unified event schema (mapping JSON)
 - Normalize timestamps + coordinates
