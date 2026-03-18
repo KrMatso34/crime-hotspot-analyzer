@@ -1,5 +1,8 @@
 # KAGS Crime Legend Component
 
+<img width="812" height="608" alt="image" src="https://github.com/user-attachments/assets/94910363-8c8d-43da-baaf-74e770bcb32f" />
+
+
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.0.0-green.svg)](package.json)
 
