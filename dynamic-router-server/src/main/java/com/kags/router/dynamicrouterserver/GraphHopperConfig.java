@@ -29,6 +29,8 @@ public class GraphHopperConfig {
         // Base "car" profile
         hopper.setProfiles(
                 new Profile("car")
+                        .setCustomModel(baseModel),
+                new Profile("foot")
                         .setCustomModel(baseModel)
         );
 

@@ -120,7 +120,43 @@ export function scoreRoute(routePoints, incidents) {
 	return score;
 }
 
-export async function fetchRoute(origin, destination) {
+/*
+const routeRes = await axios.get(
+	`https://router.project-osrm.org/route/v1/driving/${start[1]},${start[0]};${end[1]},${end[0]}`,
+	{
+		params: {
+			overview: "full",
+			geometries: "geojson",
+		},
+	}
+);
+
+const route = routeRes.data.routes[0].geometry.coordinates;
+
+// Convert [lng, lat] -> [lat, lng]
+const formattedRoute = route.map(coord => [coord[1], coord[0]]);
+*/
+
+function prepareHeatMap(heatMapPoints, fromLat, fromLon, toLat, toLon) {
+	const latSize = Math.abs(fromLat - toLat);
+	const lonSize = Math.abs(fromLon - toLon);
+	const minLat = Math.min(fromLat, toLat) - latSize;
+	const maxLat = Math.max(fromLat, toLat) + latSize;
+	const minLon = Math.min(fromLon, toLon) - lonSize;
+	const maxLon = Math.max(fromLon, toLon) + lonSize;
+
+	const filteredHeatMap = [];
+	for (const hp of heatMapPoints) {
+		if (hp[0] < minLat || hp[0] > maxLat || hp[1] < minLon || hp[1] > maxLon) continue;
+
+		// Only include lon, lat, and severity parts of heatmap point
+		// No need to send incident type
+		filteredHeatMap.push([hp[0], hp[1], hp[2]]); 
+	}
+	return filteredHeatMap;
+}
+
+export async function fetchRoute(origin, destination, routePriority='safest', heatMapPoints=[], vehicle='car') {
 	const startRes = await geocodeAddress(origin);
 
 	if (!startRes) throw new Error('Invalid origin address');
@@ -130,42 +166,24 @@ export async function fetchRoute(origin, destination) {
 	if (!endRes) throw new Error('Invalid destination address');
 
 
-	const start = [
-		parseFloat(startRes.lat),
-		parseFloat(startRes.lon),
-	];
 
-	const end = [
-		parseFloat(endRes.lat),
-		parseFloat(endRes.lon),
-	];
+	const params = { 
+		fromLat: startRes.lat, 
+		fromLon: startRes.lon, 
+		toLat: endRes.lat, 
+		toLon: endRes.lon, 
+		routePriority,
+		heatmapData: prepareHeatMap(heatMapPoints, startRes.lat, startRes.lon, endRes.lat, endRes.lon),
+		vehicle,
+	}
 
-
-	/*
-	const routeRes = await axios.get(
-		`https://router.project-osrm.org/route/v1/driving/${start[1]},${start[0]};${end[1]},${end[0]}`,
-		{
-			params: {
-				overview: "full",
-				geometries: "geojson",
-			},
-		}
-	);
-
-	const route = routeRes.data.routes[0].geometry.coordinates;
-
-	// Convert [lng, lat] -> [lat, lng]
-	const formattedRoute = route.map(coord => [coord[1], coord[0]]);
-	*/
 	let route;
 
-	await axios.get('http://localhost:8080/route', {
-		params: { fromLat: start[0], fromLon: start[1], toLat: end[0], toLon: end[1] }
-	}).then(res => {
+	await axios.post('http://localhost:8080/route', params)
+	.then(res => {
 		route = res.data;
-		
 	}).catch(err => {
-		console.error('Error fetching route: ', err);
+		throw Error('Error fetching route', err)
 	})
 	
 	return route;

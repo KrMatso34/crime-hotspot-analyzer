@@ -24,8 +24,6 @@ export default function HeatmapPlugin({ points }) {
 	useEffect(() => {
 		if (!points) return;
 
-		// TODO: Heat map points are not properly scaled to fit the zoom of the map
-
 		const heatLayer = Leaflet.heatLayer(points, heatmapOptions);
 		heatLayer.addTo(map);
 

@@ -11,45 +11,22 @@ import { scoreRoute } from '@services/geocode';
 import styles from './Map.module.css';
 import clsx from 'clsx';
 
-export default function Header({ center, markerInfo, routeCoords=[] }) {
+export default function Map({ center, markerInfo, routeCoords=[], heatData, selectedRouteIndex }) {
 	const [isDarkMode, setIsDarkMode] = useState(true);
-	const [heatData, setHeatData] = useState([]);
 	const [routeScore, setRouteScore] = useState(0);
 	const [routeBoxPosition, setRouteBoxPosition] = useState([]);
 
-	useEffect(() => {
-		fetchHeatData();
-	}, []);
+	
 
-	async function fetchHeatData() {
-		try {
-			const res = await fetch("http://localhost:4000/api/navigation/incidentData");
-			const data = await res.json();
-
-			setHeatData(data.data);
-		} catch (err) {
-			console.error("Failed to fetch incident data points", err);
+	const getLineColor = (label) => {
+		if (label === 'safest') {
+			return "cyan";
+		} else if (label === 'fastest') {
+			return "red";
+		} else {
+			return "lime";
 		}
 	}
-
-	useEffect(() => {
-		if (routeCoords.length == 0) return;
-
-		setRouteScore(scoreRoute(routeCoords, heatData));
-
-		// Pick a point along the polyline to attach the box
-		const middlePointIndex = Math.floor(routeCoords.length / 2);
-		const middlePoint = routeCoords[middlePointIndex];
-
-		// Slight offset in lat/lng to avoid overlaying the line
-		const offsetLat = 0.0001; // ~10m north
-		const offsetLng = 0.0001; // ~10m east
-		const boxPosition = [
-			middlePoint[0] + offsetLat,
-			middlePoint[1] + offsetLng,
-		];
-		setRouteBoxPosition(boxPosition);
-	}, [routeCoords]);
 
 	const toggleDarkMode = () => setIsDarkMode(!isDarkMode);
 
@@ -87,8 +64,47 @@ export default function Header({ center, markerInfo, routeCoords=[] }) {
 					</Tooltip>
 				</Marker> : ''}
 
-				{routeCoords.length > 0 && (
-					<Polyline positions={routeCoords} color="blue" />
+				{
+					routeCoords.map((route, index) => {
+						const isActive = index === selectedRouteIndex;
+						const color = getLineColor(route.label);
+
+						// If it's active, we might want to skip it here 
+						// and render it separately at the end to ensure it's on top.
+						if (isActive) return null;
+
+						return (
+							<Polyline 
+								key={index} 
+								positions={route.points} 
+								color={color} 
+								weight={4} 
+								opacity={0.6} 
+							/>
+						);
+					})
+				}
+				{selectedRouteIndex !== null && routeCoords[selectedRouteIndex] && (
+					<>
+						<Polyline 
+							positions={routeCoords[selectedRouteIndex].points} 
+							pathOptions={{
+								color: 'black', 
+								weight: 10,
+								opacity: 0.5,
+								lineJoin: 'round'
+							}}
+						/>
+						<Polyline 
+							positions={routeCoords[selectedRouteIndex].points} 
+							pathOptions={{
+								color: getLineColor(routeCoords[selectedRouteIndex].label),
+								weight: 6,
+								opacity: 1,
+								lineJoin: 'round'
+							}}
+						/>
+					</>
 				)}
 
 				<RecenterPlugin lat={center[0]} lng={center[1]}/>
@@ -97,3 +113,25 @@ export default function Header({ center, markerInfo, routeCoords=[] }) {
 		</main>
 	);
 }
+
+
+/*
+	useEffect(() => {
+		if (routeCoords.length == 0) return;
+
+		setRouteScore(scoreRoute(routeCoords, heatData));
+
+		// Pick a point along the polyline to attach the box
+		const middlePointIndex = Math.floor(routeCoords.length / 2);
+		const middlePoint = routeCoords[middlePointIndex];
+
+		// Slight offset in lat/lng to avoid overlaying the line
+		const offsetLat = 0.0001; // ~10m north
+		const offsetLng = 0.0001; // ~10m east
+		const boxPosition = [
+			middlePoint[0] + offsetLat,
+			middlePoint[1] + offsetLng,
+		];
+		setRouteBoxPosition(boxPosition);
+	}, [routeCoords]);
+	*/

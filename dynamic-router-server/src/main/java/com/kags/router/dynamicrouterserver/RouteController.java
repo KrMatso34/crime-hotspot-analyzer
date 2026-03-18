@@ -4,17 +4,12 @@ import com.graphhopper.GHRequest;
 import com.graphhopper.GHResponse;
 import com.graphhopper.GraphHopper;
 import com.graphhopper.ResponsePath;
-import com.graphhopper.config.Profile;
-import com.graphhopper.routing.weighting.Weighting;
 import com.graphhopper.util.CustomModel;
-import com.graphhopper.util.PMap;
 import com.graphhopper.util.shapes.GHPoint;
 import com.graphhopper.util.Instruction;
 import com.graphhopper.util.InstructionList;
+import org.locationtech.jts.util.Stopwatch;
 import org.springframework.web.bind.annotation.*;
-import static com.graphhopper.json.Statement.If;
-import static com.graphhopper.json.Statement.Op.MULTIPLY;
-
 
 import java.util.*;
 
@@ -24,35 +19,36 @@ import java.util.*;
 public class RouteController {
 
     private final GraphHopper hopper;
-    private final HeatMapService heatMapService;
 
     public RouteController(GraphHopper hopper) {
         this.hopper = hopper;
-        this.heatMapService = new HeatMapService();
     }
 
-    @GetMapping
-    public Map<String, Object> route(
-            @RequestParam double fromLat,
-            @RequestParam double fromLon,
-            @RequestParam double toLat,
-            @RequestParam double toLon) {
+    @PostMapping
+    public Map<String, Object> route(@RequestBody RouteRequest request) {
+        Stopwatch stopwatch = new Stopwatch();
+        stopwatch.start();
 
-        // Clone the base profile's CustomModel
+        String profileName = (request.vehicle != null && request.vehicle.equals("foot")) ? "foot" : "car";
+
         CustomModel requestModel = new CustomModel(
-                hopper.getProfile("car").getCustomModel()
+                hopper.getProfile(profileName).getCustomModel()
         );
 
-        // Apply dynamic heat points (very low for testing)
-        heatMapService.adjustModel(requestModel);
+        List<HeatPoint> heatPoints = request.heatmapData.stream()
+            .map(p -> new HeatPoint(p.get(0), p.get(1), p.get(2)))
+            .toList();
 
-        // Build GHRequest with temp profile
-        GHRequest request = new GHRequest(fromLat, fromLon, toLat, toLon)
-                .setProfile("car")
-                .setCustomModel(requestModel)
-                .setLocale("en");
+        HeatMapService heatMapService = new HeatMapService(heatPoints);
 
-        GHResponse response = hopper.route(request);
+        heatMapService.adjustModel(requestModel, request.routePriority);
+
+        GHRequest ghRequest = new GHRequest(request.fromLat, request.fromLon, request.toLat, request.toLon)
+            .setProfile(profileName)
+            .setCustomModel(requestModel)
+            .setLocale("en");
+
+        GHResponse response = hopper.route(ghRequest);
 
         if (response.hasErrors()) {
             throw new RuntimeException(response.getErrors().toString());
@@ -64,14 +60,12 @@ public class RouteController {
         result.put("distance", path.getDistance());   // in meters
         result.put("time", path.getTime());           // in milliseconds
 
-        // Return coordinates as simple array of [lat, lon]
         List<List<Double>> points = new ArrayList<>();
         for (GHPoint p : path.getPoints()) {
             points.add(Arrays.asList(p.lat, p.lon));
         }
         result.put("points", points);
 
-        // Return instructions safely
         List<Map<String, Object>> instructions = new ArrayList<>();
         InstructionList instrList = path.getInstructions();
         for (Instruction instr : instrList) {
@@ -82,6 +76,11 @@ public class RouteController {
             instructions.add(instrMap);
         }
         result.put("instructions", instructions);
+        result.put("label", request.routePriority);
+        result.put("vehicle", profileName);
+
+        stopwatch.stop();
+        System.out.println("Request (" + request.routePriority + ") took " + stopwatch.getTimeString() + " to run.");
 
         return result;
     }

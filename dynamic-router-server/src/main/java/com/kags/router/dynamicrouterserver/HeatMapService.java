@@ -17,24 +17,27 @@ import static com.graphhopper.json.Statement.Op.MULTIPLY;
 @Service
 public class HeatMapService {
 
-    private final List<HeatPoint> heatPoints = List.of(
-            new HeatPoint(47.6144, -122.1923, 200, 10),
-            new HeatPoint(47.6186, -122.1950, 190, 12),
-            new HeatPoint(47.6286, -122.1950, 200, 10),
-            new HeatPoint(47.6140, -122.1961, 220, 15),
-            new HeatPoint(47.6211, -122.2000, 250, 15),
-            new HeatPoint(47.6120, -122.2030, 150, 15),
-            new HeatPoint(47.6105, -122.1818, 200, 17),
-            new HeatPoint(47.6258, -122.1920, 150, 20),
-            new HeatPoint(47.6160, -122.2000, 180, 20),
-            new HeatPoint(47.6263, -122.1888, 150, 20)
-    );
+    private final List<HeatPoint> heatPoints;
 
     public List<HeatPoint> getHeatPoints() {
         return heatPoints;
     }
 
-    public void adjustModel(CustomModel model) {
+    public HeatMapService(List<HeatPoint> heatPoints) {
+        this.heatPoints = heatPoints;
+    }
+
+    public void adjustModel(CustomModel model, String routePriority) {
+        if (routePriority.equals("fastest")) return;
+
+        double radius = 0.002;
+        String multiplier = "0.08";
+
+        if (routePriority.equals("balanced")) {
+            radius = 0.001;
+            multiplier = "0.8";
+        }
+
         int count = 0;
         for (HeatPoint hp : heatPoints) {
             String areaId = "heat_zone_" + count++;
@@ -42,11 +45,11 @@ public class HeatMapService {
             JsonFeature feature = new JsonFeature();
             feature.setId(areaId);
 
-            feature.setGeometry(createArea(hp.getLat(), hp.getLon(), 0.001));
+            feature.setGeometry(createArea(hp.getLat(), hp.getLon(), radius));
 
             model.getAreas().getFeatures().add(feature);
 
-            model.addToPriority(If("in_" + areaId, MULTIPLY, "0.1"));
+            model.addToPriority(If("in_" + areaId, MULTIPLY, multiplier));
         }
     }
 

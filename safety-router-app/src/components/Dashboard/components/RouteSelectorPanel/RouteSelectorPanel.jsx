@@ -7,25 +7,48 @@ import InstructionsDisplay from './components/InstructionsDisplay/InstructionsDi
 
 import styles from './RouteSelectorPanel.module.css';
 import clsx from 'clsx';
+import './formStyles.css';
+import { TransportationSelector } from './components/TransportationSelector/TransportationSelector';
 
-export default function RouteSelectorPanel({ setCamCoords, setRoute, routeInstructions=[] }) {
+export default function RouteSelectorPanel({ 
+	setCamCoords, 
+	setRoute, 
+	heatMap, 
+	routeInstructions=[], 
+	finishRoute, 
+	heatMapFilters,
+	setFilterTimePeriod,
+	setFilterIgnoreTag 
+}) {
+	const [transportationMethod, setTransportationMethod] = useState('car');
 
 	return (
 		<div className={clsx(styles.routeSelectorPanel)}>
 			<DestinationForm 
 				setCamCoords={setCamCoords} 
 				setRoute={setRoute}
+				heatMap={heatMap}
+				transportationMethod={transportationMethod}
 			/>
 
 			<div className={clsx(styles.detailsContainer)}>
 				{
 					(routeInstructions.length == 0) ? (
 						<>
-							<FilterForm/>
+							<TransportationSelector
+								transportationMethod={transportationMethod}
+								setTransportationMethod={setTransportationMethod}
+							/>
+							<FilterForm 
+								setFilterTimePeriod={setFilterTimePeriod} 
+								setFilterIgnoreTag={setFilterIgnoreTag}
+								heatMapFilters={heatMapFilters}
+							/>
 							<LiveAlertsDisplay setCamCoords={setCamCoords}/>
 						</>
 					) : (
 						<>
+							<button onClick={finishRoute}>Cancel Route</button>
 							<InstructionsDisplay instructions={routeInstructions}/>
 						</>
 					)

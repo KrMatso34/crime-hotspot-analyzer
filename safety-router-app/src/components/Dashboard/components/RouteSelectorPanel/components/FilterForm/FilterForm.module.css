@@ -5,7 +5,7 @@
 
 .incidentTypeGrid {
 	display: grid;
-	grid-template-columns: 1fr 1fr;
+	grid-template-columns: 1fr;
 	padding: 8px;
 }
 
@@ -34,4 +34,8 @@
 
 .routeComparisonButtonInfo span {
 	margin-left: 8px
+}
+
+.selectedTimePeriodButton {
+	font-weight: bold;
 }

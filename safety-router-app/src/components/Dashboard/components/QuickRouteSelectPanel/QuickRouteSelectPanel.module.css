@@ -4,11 +4,11 @@
 	bottom: 0;
 	left: 50%;
 	transform: translateX(-50%);
-	background-color: #ccc;
 	display: flex;
 	margin-bottom: 15px;
 	z-index: 1100; /* Leaflet map controls use 1000 */
 	box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.6); ;
+	border-radius: 20px;
 }
 
 .routeButton {
@@ -19,12 +19,26 @@
 	text-align: center;
 	cursor: pointer;
 	user-select: none;
+	background-color: var(--bg-primary);
+	border: 2px solid var(--bg-secondary);
+	color: var(--route-color);
+}
+
+.leftButton {
+	border-top-left-radius: 20px;
+	border-bottom-left-radius: 20px;
+}
+
+.rightButton {
+	border-top-right-radius: 20px;
+	border-bottom-right-radius: 20px;
 }
 
 .routeButton.active {
-	border: 1px solid black;
+	border-color: var(--route-color);
+	background-color: var(--bg-secondary);
 }
 
 .routeButton:hover {
-	background-color: #bbb;
+	background-color: var(--bg-secondary);
 }
