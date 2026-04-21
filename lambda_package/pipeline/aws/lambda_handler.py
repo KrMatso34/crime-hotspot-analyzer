@@ -1,13 +1,14 @@
 import os
+import math
 import json
 import hashlib
 from decimal import Decimal
 from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, Optional, List
 
-from pipeline.aws.checkpoint_store import get_checkpoint, set_checkpoint
 import boto3
 
+from pipeline.aws.checkpoint_store import get_checkpoint, set_checkpoint
 from pipeline.api.fetch_seattle import fetch_seattle
 from pipeline.api.fetch_bellevue import fetch_bellevue
 from pipeline.api.flatten_bellevue import flatten_bellevue_feature
@@ -85,18 +86,49 @@ def map_row_to_event(row: Dict[str, Any], mapping: Dict[str, Any]) -> Dict[str, 
     return event
 
 
+def decay_weight(days_old: int, half_life: int = 30) -> float:
+    return math.exp(-days_old / half_life)
+
+
+CRIME_PRIORITY_MAP = {
+    "HOMICIDE": 5,
+    "MURDER": 5,
+    "ROBBERY": 4,
+    "ASSAULT": 4,
+    "AGGRAVATED ASSAULT": 4,
+    "BURGLARY": 3,
+    "VEHICLE THEFT": 3,
+    "THEFT": 2,
+    "LARCENY-THEFT": 2,
+    "PROPERTY CRIME": 2,
+    "WARRANT": 1,
+    "ALL OTHER OFFENSES": 1,
+    "OTHER": 1
+}
+
+
 def normalize_event(event: Dict[str, Any], stats: Dict[str, int]) -> Optional[Dict[str, Any]]:
     event_type = (event.get("event_type") or "").strip()
     if not event_type:
         stats["rows_dropped_missing_required"] += 1
         return None
+
     event["event_type"] = event_type.upper()
+
+    normalized_type = event["event_type"]
+    normalized_subtype = (event.get("event_subtype") or "").strip().upper()
+    event["priority_score"] = (
+        CRIME_PRIORITY_MAP.get(normalized_subtype)
+        or CRIME_PRIORITY_MAP.get(normalized_type)
+        or 1
+    )
 
     occurred_raw = event.get("occurred_at")
     occurred_at_utc = parse_datetime_to_utc_iso(occurred_raw)
     if not occurred_at_utc:
         stats["rows_dropped_missing_required"] += 1
         return None
+
     event["occurred_at_utc"] = occurred_at_utc
 
     reported_raw = event.get("reported_at")
@@ -104,13 +136,18 @@ def normalize_event(event: Dict[str, Any], stats: Dict[str, int]) -> Optional[Di
     if reported_at_utc:
         event["reported_at_utc"] = reported_at_utc
 
-    # 90-day rolling window filter
     occurred_dt = datetime.fromisoformat(occurred_at_utc.replace("Z", "+00:00"))
-    cutoff_dt = datetime.now(timezone.utc) - timedelta(days=90)
+    now_dt = datetime.now(timezone.utc)
+    cutoff_dt = now_dt - timedelta(days=90)
 
     if occurred_dt < cutoff_dt:
         stats["rows_dropped_too_old"] += 1
         return None
+
+    age_days = max((now_dt - occurred_dt).days, 0)
+    event["age_days"] = age_days
+    event["decay_weight"] = round(decay_weight(age_days), 6)
+    event["weighted_score"] = round(event["priority_score"] * event["decay_weight"], 4)
 
     lat = safe_float(get_nested(event, "location.lat"))
     lon = safe_float(get_nested(event, "location.lon"))
@@ -132,7 +169,6 @@ def normalize_event(event: Dict[str, Any], stats: Dict[str, int]) -> Optional[Di
         case_number=case_number
     )
 
-    # TTL for DynamoDB (90 days after occurrence)
     expires_dt = occurred_dt + timedelta(days=90)
     event["expires_at"] = int(expires_dt.timestamp())
 

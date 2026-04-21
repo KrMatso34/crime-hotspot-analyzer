@@ -214,3 +214,8 @@ __marimo__/
 
 pipeline/sample_input/
 pipeline/outputs/
+
+node_modules/
+kags-streetlights/data/
+lambda_package/
+lambda_bundle.zip

@@ -1,0 +1,20 @@
+{
+  "name": "kags-streetlights",
+  "version": "1.0.0",
+  "description": "KAGS streetlight data pipeline and route scoring",
+  "type": "module",
+  "scripts": {
+    "fetch": "node scripts/fetchStreetlights.js",
+    "fetch:s3": "node scripts/fetchStreetlights.js --upload-s3",
+    "fetch:dynamo": "node scripts/fetchStreetlights.js --upload-s3 --upload-dynamodb",
+    "dev": "node scripts/server.js"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.500.0",
+    "@aws-sdk/client-s3": "^3.500.0",
+    "@aws-sdk/lib-dynamodb": "^3.500.0",
+    "express": "^4.18.0",
+    "ngeohash": "^0.6.3",
+    "rbush": "^3.0.1"
+  }
+}
