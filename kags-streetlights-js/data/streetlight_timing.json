@@ -1,0 +1,86 @@
+{
+  "metadata": {
+    "project": "KAGS - Crime-Aware Routing System",
+    "description": "Streetlight on/off timing data for Seattle, Bellevue, King County area (~47.6°N latitude)",
+    "owner": "Kyle"
+  },
+
+  "how_streetlights_work": {
+    "control_mechanism": "Photocell (dusk-to-dawn sensor)",
+    "explanation": "Seattle City Light streetlights use photocell sensors mounted on each pole. The sensor detects ambient light levels and automatically switches the light on when it gets dark and off when it gets light. There is no central on/off switch or fixed schedule — each pole reacts independently to light conditions.",
+    "on_trigger": "Ambient light drops below ~10-30 lux (roughly dusk, 15-30 minutes before full dark)",
+    "off_trigger": "Ambient light rises above ~30-50 lux (roughly dawn)",
+    "time_delay": "Built-in delay prevents flickering from car headlights, lightning, or momentary shadows",
+    "smart_controls": "Some newer Seattle installations use wireless IoT controllers that allow remote dimming and monitoring, but the on/off behavior is still tied to ambient light levels"
+  },
+
+  "seasonal_schedule_seattle": {
+    "note": "These are APPROXIMATE times. Actual on/off varies by ±15 min depending on cloud cover, fog, and exact pole location. Seattle is at ~47.6°N latitude.",
+    "winter": {
+      "months": "November, December, January, February",
+      "lights_on": "~4:00 PM - 4:30 PM",
+      "lights_off": "~7:15 AM - 7:45 AM",
+      "dark_hours": "~15-16 hours of streetlight operation",
+      "shortest_day": "Dec 21 — sunset ~4:18 PM, sunrise ~7:55 AM"
+    },
+    "spring": {
+      "months": "March, April, May",
+      "lights_on": "~7:00 PM - 8:30 PM",
+      "lights_off": "~5:30 AM - 6:30 AM",
+      "dark_hours": "~10-13 hours of streetlight operation",
+      "equinox": "Mar 20 — sunset ~7:24 PM, sunrise ~7:17 AM"
+    },
+    "summer": {
+      "months": "June, July, August",
+      "lights_on": "~9:00 PM - 9:30 PM",
+      "lights_off": "~5:00 AM - 5:30 AM",
+      "dark_hours": "~8-9 hours of streetlight operation",
+      "longest_day": "Jun 21 — sunset ~9:11 PM, sunrise ~5:11 AM"
+    },
+    "fall": {
+      "months": "September, October",
+      "lights_on": "~6:00 PM - 7:30 PM",
+      "lights_off": "~6:15 AM - 7:00 AM",
+      "dark_hours": "~11-13 hours of streetlight operation"
+    }
+  },
+
+  "live_api_availability": {
+    "real_time_on_off_api": "DOES NOT EXIST — no public API provides real-time streetlight on/off status for Seattle",
+    "streetlight_repair_tracker": "Seattle City Light has a repair tracker at seattle.gov but it only shows maintenance status, not on/off state",
+    "recommended_approach": "Use a sunrise/sunset API to calculate when lights turn on and off for any given date"
+  },
+
+  "sunrise_sunset_api": {
+    "url": "https://api.sunrise-sunset.org/json",
+    "free": true,
+    "rate_limit": "No key required, but be polite — cache results per day",
+    "example_request": "https://api.sunrise-sunset.org/json?lat=47.6062&lng=-122.3321&date=2026-01-15&formatted=0",
+    "example_response": {
+      "sunrise": "2026-01-15T15:49:00+00:00",
+      "sunset": "2026-01-16T00:42:00+00:00",
+      "civil_twilight_begin": "2026-01-15T15:16:00+00:00",
+      "civil_twilight_end": "2026-01-16T01:15:00+00:00"
+    },
+    "how_to_use_for_streetlights": {
+      "lights_on_estimate": "civil_twilight_end (or sunset + 20 minutes)",
+      "lights_off_estimate": "civil_twilight_begin (or sunrise - 10 minutes)",
+      "explanation": "Photocells trigger at roughly the civil twilight threshold (~6° below horizon). Using civil_twilight times from the API gives the most accurate estimate of when streetlights activate."
+    }
+  },
+
+  "integration_code": {
+    "python": "import httpx\nfrom datetime import datetime, timedelta, timezone\n\nasync def get_streetlight_times(date_str: str, lat: float = 47.6062, lon: float = -122.3321) -> dict:\n    \"\"\"Get estimated streetlight on/off times for a given date.\"\"\"\n    url = f'https://api.sunrise-sunset.org/json?lat={lat}&lng={lon}&date={date_str}&formatted=0'\n    async with httpx.AsyncClient() as client:\n        resp = await client.get(url)\n        data = resp.json()['results']\n    \n    sunset = datetime.fromisoformat(data['sunset'])\n    sunrise = datetime.fromisoformat(data['sunrise'])\n    twilight_end = datetime.fromisoformat(data['civil_twilight_end'])\n    twilight_begin = datetime.fromisoformat(data['civil_twilight_begin'])\n    \n    return {\n        'lights_on': twilight_end,     # Most accurate estimate\n        'lights_off': twilight_begin,   # Most accurate estimate\n        'sunset': sunset,\n        'sunrise': sunrise,\n        'dark_hours': (twilight_begin + timedelta(days=1) - twilight_end).total_seconds() / 3600\n    }\n\ndef are_streetlights_on(current_utc: datetime, sun_times: dict) -> bool:\n    \"\"\"Check if streetlights should be on right now.\"\"\"\n    lights_on = sun_times['lights_on']\n    lights_off = sun_times['lights_off']\n    # Handle overnight: lights come on in evening, go off in morning\n    if lights_on > lights_off:\n        return current_utc >= lights_on or current_utc <= lights_off\n    return lights_on <= current_utc <= lights_off",
+
+    "javascript": "async function getStreetlightTimes(dateStr, lat = 47.6062, lon = -122.3321) {\n  const url = `https://api.sunrise-sunset.org/json?lat=${lat}&lng=${lon}&date=${dateStr}&formatted=0`;\n  const resp = await fetch(url);\n  const data = (await resp.json()).results;\n  \n  return {\n    lightsOn: new Date(data.civil_twilight_end),   // best estimate\n    lightsOff: new Date(data.civil_twilight_begin), // best estimate\n    sunset: new Date(data.sunset),\n    sunrise: new Date(data.sunrise),\n  };\n}\n\nfunction areStreetlightsOn(now, sunTimes) {\n  return now >= sunTimes.lightsOn || now <= sunTimes.lightsOff;\n}"
+  },
+
+  "for_route_scoring": {
+    "logic": "1. On each route request, check if it's currently nighttime using the sunrise/sunset API (cache per day).\n2. If daytime: skip lighting score entirely — streetlights are off, they don't affect safety.\n3. If nighttime: compute lighting_score by sampling route points and counting nearby streetlights.\n4. Combine: overall_safety = (0.65 × crime_score) + (0.35 × lighting_score)\n5. The 65/35 split means crime is still the primary factor, but lighting meaningfully affects the score at night.",
+    "edge_cases": [
+      "Cloudy/stormy days: photocells may trigger lights earlier — our calculation will slightly underestimate lit hours on dark overcast days",
+      "Broken lights: the dataset shows where lights SHOULD be, not whether they're currently working — Seattle has a repair backlog",
+      "Dawn/dusk transitions: ~20 min window where some lights are on and some aren't — we treat this as 'on' for safety scoring"
+    ]
+  }
+}

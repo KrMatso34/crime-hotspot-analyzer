@@ -1,0 +1,201 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  KAGS Streetlight Infrastructure
+  S3 bucket for raw data, DynamoDB table with geohash indexing for spatial queries,
+  and a scheduled Lambda to refresh streetlight data monthly.
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, staging, prod]
+  
+  S3BucketName:
+    Type: String
+    Default: kags-crime-data
+    Description: S3 bucket for streetlight data files
+
+  DynamoDBTableName:
+    Type: String
+    Default: kags-streetlights
+    Description: DynamoDB table for streetlight records
+
+Resources:
+
+  # ============================================================
+  # S3 BUCKET — stores GeoJSON + CSV bulk files
+  # ============================================================
+  StreetlightDataBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${S3BucketName}-${Environment}"
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: CleanupOldVersions
+            Status: Enabled
+            NoncurrentVersionExpiration:
+              NoncurrentDays: 90
+      Tags:
+        - Key: Project
+          Value: KAGS
+        - Key: Component
+          Value: streetlights
+
+  # ============================================================
+  # DYNAMODB TABLE — geohash-indexed streetlight locations
+  # ============================================================
+  # 
+  # Schema Design:
+  #   Partition Key: geohash6 (String) — ~1.2km x 0.6km grid cells
+  #   Sort Key:      pole_id (String)  — unique pole identifier
+  #
+  # Query pattern at route-scoring time:
+  #   1. Compute geohash6 for a route point
+  #   2. Get the 8 neighboring geohash cells
+  #   3. BatchGetItem or Query across those 9 cells
+  #   4. Count returned poles = streetlight density for that point
+  #
+  # GSI on geohash7 for finer-grained queries (~150m cells)
+  # when you need precise nearby-pole counts
+  #
+  StreetlightTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${DynamoDBTableName}-${Environment}"
+      BillingMode: PAY_PER_REQUEST    # No capacity planning needed
+      AttributeDefinitions:
+        - AttributeName: geohash6
+          AttributeType: S
+        - AttributeName: pole_id
+          AttributeType: S
+        - AttributeName: geohash7
+          AttributeType: S
+      KeySchema:
+        - AttributeName: geohash6
+          KeyType: HASH
+        - AttributeName: pole_id
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: geohash7-index
+          KeySchema:
+            - AttributeName: geohash7
+              KeyType: HASH
+            - AttributeName: pole_id
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      Tags:
+        - Key: Project
+          Value: KAGS
+        - Key: Component
+          Value: streetlights
+
+  # ============================================================
+  # IAM ROLE — for Lambda to access S3 + DynamoDB
+  # ============================================================
+  StreetlightLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "kags-streetlight-refresh-role-${Environment}"
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: StreetlightDataAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                Resource: !Sub "arn:aws:s3:::${S3BucketName}-${Environment}/streetlights/*"
+              - Effect: Allow
+                Action:
+                  - dynamodb:BatchWriteItem
+                  - dynamodb:PutItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                Resource:
+                  - !GetAtt StreetlightTable.Arn
+                  - !Sub "${StreetlightTable.Arn}/index/*"
+
+  # ============================================================
+  # EVENTBRIDGE RULE — triggers monthly refresh
+  # ============================================================
+  MonthlyRefreshSchedule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub "kags-streetlight-monthly-refresh-${Environment}"
+      Description: "Refresh streetlight data from Seattle ArcGIS API on the 1st of each month"
+      ScheduleExpression: "cron(0 6 1 * ? *)"   # 6am UTC on the 1st
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt RefreshLambdaPlaceholder.Arn
+          Id: StreetlightRefreshTarget
+
+  # ============================================================
+  # LAMBDA PLACEHOLDER
+  # ============================================================
+  # In production, deploy the fetch_streetlights.py logic as a Lambda.
+  # For now this is a placeholder — Saksham can wire this up with SAM or CDK.
+  RefreshLambdaPlaceholder:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "kags-streetlight-refresh-${Environment}"
+      Runtime: python3.12
+      Handler: index.handler
+      Role: !GetAtt StreetlightLambdaRole.Arn
+      Timeout: 300
+      MemorySize: 512
+      Environment:
+        Variables:
+          S3_BUCKET: !Sub "${S3BucketName}-${Environment}"
+          DYNAMODB_TABLE: !Sub "${DynamoDBTableName}-${Environment}"
+      Code:
+        ZipFile: |
+          # Placeholder — replace with packaged fetch_streetlights.py
+          # See scripts/fetch_streetlights.py for the full implementation
+          def handler(event, context):
+              print("TODO: Wire up fetch_streetlights.py logic here")
+              print("This Lambda should:")
+              print("  1. Fetch all streetlights from ArcGIS API")
+              print("  2. Save GeoJSON to S3")
+              print("  3. Write geohashed records to DynamoDB")
+              return {"statusCode": 200, "body": "Placeholder"}
+      Tags:
+        - Key: Project
+          Value: KAGS
+
+  LambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref RefreshLambdaPlaceholder
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt MonthlyRefreshSchedule.Arn
+
+Outputs:
+  BucketName:
+    Description: S3 bucket for streetlight data
+    Value: !Ref StreetlightDataBucket
+
+  TableName:
+    Description: DynamoDB table for streetlight records
+    Value: !Ref StreetlightTable
+
+  TableArn:
+    Description: DynamoDB table ARN (for cross-stack references)
+    Value: !GetAtt StreetlightTable.Arn
+
+  LambdaFunction:
+    Description: Monthly refresh Lambda (placeholder)
+    Value: !Ref RefreshLambdaPlaceholder
