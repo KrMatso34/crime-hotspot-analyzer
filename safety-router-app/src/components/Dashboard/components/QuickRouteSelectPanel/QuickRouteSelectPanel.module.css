@@ -42,3 +42,15 @@
 .routeButton:hover {
 	background-color: var(--bg-secondary);
 }
+
+.spinnerContainer {
+	width: 100%;
+	display: flex;
+	padding-top: 10px;
+	justify-content: center;
+}
+
+.spinnerContainer div {
+	width: 40px;
+	height: 40px;
+}

@@ -1,6 +1,16 @@
 
 .filterForm {
-	
+	border: 2px solid var(--border-primary);
+	padding: 10px;
+	margin: 10px 0;
+}
+
+.tabContentContainer {
+	padding: 10px;
+}
+
+.tabContentContainer p {
+	color: var(--text-tertiary);
 }
 
 .incidentTypeGrid {
@@ -38,4 +48,23 @@
 
 .selectedTimePeriodButton {
 	font-weight: bold;
+	background-color: var(--border-primary);
+}
+
+.tabContainer {
+	width: 100%;
+	display: flex;
+}
+
+.tabContainer .tabButton {
+	flex: 1;
+}
+
+.tabContainer .tabButton.active {
+	background-color: var(--border-primary);
+}
+
+.riskZoneContainer {
+	border: 1px solid var(--border-primary);
+	padding: 5px;
 }

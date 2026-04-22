@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 
-import { MapContainer, TileLayer, Marker, Popup, Polyline, Tooltip } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, Tooltip, Polygon, SVGOverlay } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
 
 import RecenterPlugin from './components/RecenterPlugin/RecenterPlugin';
 import HeatmapPlugin from './components/HeatmapPlugin/HeatmapPlugin';
@@ -11,13 +12,19 @@ import { scoreRoute } from '@services/geocode';
 import styles from './Map.module.css';
 import clsx from 'clsx';
 
-export default function Map({ center, markerInfo, routeCoords=[], heatData, selectedRouteIndex }) {
+const svgIcon = L.divIcon({
+  html: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sun-icon lucide-sun"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>`,
+  className: styles.streetlightIcon,
+  iconSize: [24, 24],
+  iconAnchor: [12, 12]
+});
+
+export default function Map({ center, markerInfo, routeCoords=[], riskZones=[], streetlightData=[], heatData, selectedRouteIndex }) {
 	const [isDarkMode, setIsDarkMode] = useState(true);
 	const [routeScore, setRouteScore] = useState(0);
 	const [routeBoxPosition, setRouteBoxPosition] = useState([]);
 
 	
-
 	const getLineColor = (label) => {
 		if (label === 'safest') {
 			return "cyan";
@@ -65,6 +72,19 @@ export default function Map({ center, markerInfo, routeCoords=[], heatData, sele
 				</Marker> : ''}
 
 				{
+					
+					riskZones.map(zone => (
+						<Polygon positions={zone.geometry.coordinates[0].map(coord => ([coord[1], coord[0]]))} pathOptions={{color: 'red', fillColor: 'red'}}/>
+					))
+				}
+
+				{
+					streetlightData.map(lightCoord => (
+						<Marker position={lightCoord} icon={svgIcon} />
+					))
+				}
+
+				{
 					routeCoords.map((route, index) => {
 						const isActive = index === selectedRouteIndex;
 						const color = getLineColor(route.label);
@@ -72,6 +92,8 @@ export default function Map({ center, markerInfo, routeCoords=[], heatData, sele
 						// If it's active, we might want to skip it here 
 						// and render it separately at the end to ensure it's on top.
 						if (isActive) return null;
+
+						if (!route.points) return null;
 
 						return (
 							<Polyline 
@@ -84,7 +106,7 @@ export default function Map({ center, markerInfo, routeCoords=[], heatData, sele
 						);
 					})
 				}
-				{selectedRouteIndex !== null && routeCoords[selectedRouteIndex] && (
+				{selectedRouteIndex !== null && routeCoords[selectedRouteIndex] && routeCoords[selectedRouteIndex].points && (
 					<>
 						<Polyline 
 							positions={routeCoords[selectedRouteIndex].points} 
@@ -106,6 +128,8 @@ export default function Map({ center, markerInfo, routeCoords=[], heatData, sele
 						/>
 					</>
 				)}
+				
+				
 
 				<RecenterPlugin lat={center[0]} lng={center[1]}/>
 				<HeatmapPlugin points={heatData}/>

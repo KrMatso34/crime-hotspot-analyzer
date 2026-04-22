@@ -1,21 +1,43 @@
 import axios from 'axios';
 
-export async function geocodeAddress(query) {
-	const res = await axios.get(
-		'https://nominatim.openstreetmap.org/search',
-		{
-			params: {
-				q: query,
-				format: 'json',
-				limit: 1
-			},
-			headers: {
-				'Accept-Language': 'en',
-			}
-		}
-	)
+function getCache(key) {
+	const cached = sessionStorage.getItem("geocode:" + key);
+	return cached ? JSON.parse(cached) : null;
+}
 
-	return res.data[0];
+function setCache(key, value) {
+	sessionStorage.setItem("geocode:" + key, JSON.stringify(value));
+}
+
+export async function geocodeAddress(query) {
+	const key = query.toLowerCase().trim();
+
+	const cached = getCache(key);
+	if (cached) return cached;
+	
+	try {
+		const res = await axios.get(
+			'https://nominatim.openstreetmap.org/search',
+			{
+				params: {
+					q: query,
+					format: 'json',
+					limit: 1
+				},
+				headers: {
+					'Accept-Language': 'en',
+				}
+			}
+		)
+
+
+		const result = res.data[0];
+		setCache(key, result);
+
+		return result;
+	} catch (err) {
+		throw err;
+	}
 }
 
 // Calculate distance taking earth's round shape into account 
@@ -156,35 +178,40 @@ function prepareHeatMap(heatMapPoints, fromLat, fromLon, toLat, toLon) {
 	return filteredHeatMap;
 }
 
-export async function fetchRoute(origin, destination, routePriority='safest', heatMapPoints=[], vehicle='car') {
-	const startRes = await geocodeAddress(origin);
+export async function fetchRoute(origin, destination, routePriority='safest', heatMapPoints=[], riskZones=[], streetlightData, vehicle='car') {
+	try {
+		const startRes = await geocodeAddress(origin);
 
-	if (!startRes) throw new Error('Invalid origin address');
+		if (!startRes) throw new Error('Invalid origin address');
 
-	const endRes = await geocodeAddress(destination);
+		const endRes = await geocodeAddress(destination);
 
-	if (!endRes) throw new Error('Invalid destination address');
+		if (!endRes) throw new Error('Invalid destination address');
 
+		const params = { 
+			fromLat: startRes.lat, 
+			fromLon: startRes.lon, 
+			toLat: endRes.lat, 
+			toLon: endRes.lon, 
+			routePriority,
+			heatmapData: prepareHeatMap(heatMapPoints, startRes.lat, startRes.lon, endRes.lat, endRes.lon),
+			vehicle,
+			riskZones: riskZones.filter(zone => zone.active).map(zone => zone.geometry.coordinates[0].map(coord => ([coord[1], coord[0]]))),
+			streetlightData: streetlightData,
+		}
 
+		let route;
 
-	const params = { 
-		fromLat: startRes.lat, 
-		fromLon: startRes.lon, 
-		toLat: endRes.lat, 
-		toLon: endRes.lon, 
-		routePriority,
-		heatmapData: prepareHeatMap(heatMapPoints, startRes.lat, startRes.lon, endRes.lat, endRes.lon),
-		vehicle,
+		await axios.post('http://localhost:8080/route', params)
+			.then(res => {
+				route = res.data;
+			})
+			.catch(err => {
+				throw Error('Error fetching route', err)
+			})
+		
+		return route;
+	} catch (err) {
+		throw err;
 	}
-
-	let route;
-
-	await axios.post('http://localhost:8080/route', params)
-	.then(res => {
-		route = res.data;
-	}).catch(err => {
-		throw Error('Error fetching route', err)
-	})
-	
-	return route;
 }

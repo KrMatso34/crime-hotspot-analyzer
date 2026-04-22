@@ -10,6 +10,8 @@ import { CrimeLegend } from './components/CrimeLegend/CrimeLegend'
 import styles from './Dashboard.module.css';
 import clsx from 'clsx';
 
+import riskZonesData from './riskZonesData.json';
+
 export default function Dashboard() {
 	const [camCoords, setCamCoords] = useState([47.610138, -122.201517]);
 	const [markerInfo, setMarkerInfo] = useState({});
@@ -21,6 +23,9 @@ export default function Dashboard() {
 		timePeriod: 90,
 		ignoreTags: []
 	})
+	const [riskZones, setRiskZones] = useState(riskZonesData.features.map(f => ({...f, active: true})));
+	const [streetlightData, setStreetlightData] = useState([[47.693182, -122.098657], [47.692854, -122.104909], [47.692954, -122.115051], [47.693142, -122.125091], [47.697406, -122.128552]])
+	const [streetlightOverride, setStreetlightOverride] = useState(false);
 
 	useEffect(() => {
 		fetchHeatData();
@@ -103,20 +108,34 @@ export default function Dashboard() {
 		}));
 	}
 
+	const toggleRiskZone = (zoneIndex) => {
+		setRiskZones((prev) => {
+			const next = [...prev];
+			next[zoneIndex] = {...next[zoneIndex], active: !next[zoneIndex].active}
+			return next;
+		});
+	}
+
+
 	return (
 		<div className={clsx(styles.dashboard)}>
 			<Header/>
 			<div className={clsx(styles.content)}>
 				<RouteSelectorPanel 
 					setCamCoords={(coords, info) => {setCamCoords(coords); setMarkerInfo(info)}}
-					setRoute={setRoute}
+					route={route} setRoute={setRoute}
 					routeInstructions={route.length > 0 ? route[selectedRouteIndex].instructions : []}
 					heatMap={heatMap}
+					riskZones={riskZones}
+					setStreetlightData={setStreetlightData}
 					finishRoute={finishRoute}
 
 					heatMapFilters={heatMapFilters}
 					setFilterTimePeriod={setFilterTimePeriod}
 					setFilterIgnoreTag={setFilterIgnoreTag}
+					toggleRiskZone={toggleRiskZone}
+					streetlightOverride={streetlightOverride}
+					setStreetlightOverride={setStreetlightOverride}
 				/>
 				
 				<Map 
@@ -125,6 +144,8 @@ export default function Dashboard() {
 					routeCoords={route.map(r => ({points: r.points, label: r.label}))}
 					heatData={heatMap.map(point => [point[0], point[1], point[2]])}
 					selectedRouteIndex={selectedRouteIndex}
+					riskZones={riskZones.filter((zone) => zone.active)}
+					streetlightData={streetlightOverride ? streetlightData : []}
 				/>
 				<QuickRouteSelectPanel
 					routesInfo={route}

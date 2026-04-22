@@ -61,7 +61,7 @@ export default function LiveAlertsDisplay({setCamCoords}) {
 				<RefreshCw onClick={fetchAlerts}/>
 			</div>
 			{
-				alerts.map((alert, index) => 
+				alerts && alerts.map((alert, index) => 
 					<AlertCard 
 						key={alert.id} 
 						{...alert}

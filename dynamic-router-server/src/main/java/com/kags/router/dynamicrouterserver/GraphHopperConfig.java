@@ -10,6 +10,8 @@ import static com.graphhopper.json.Statement.If;
 import static com.graphhopper.json.Statement.Op.LIMIT;
 import static com.graphhopper.json.Statement.Op.MULTIPLY;
 
+import java.util.Collections;
+
 @Configuration
 public class GraphHopperConfig {
 
@@ -21,18 +23,30 @@ public class GraphHopperConfig {
         hopper.setOSMFile("washington-260228.osm.pbf");
         hopper.setGraphHopperLocation("graph-cache");
 
-        // Base CustomModel
-        CustomModel baseModel = new CustomModel();
-        //baseModel.addToSpeed(If("true", MULTIPLY, "1"));
-        baseModel.addToSpeed(If("true", LIMIT,"100"));
+        // Which data layers to extract from OSM
+        hopper.setEncodedValuesString("car_access, car_average_speed, foot_access, foot_average_speed, road_class, surface");
 
-        // Base "car" profile
-        hopper.setProfiles(
-                new Profile("car")
-                        .setCustomModel(baseModel),
-                new Profile("foot")
-                        .setCustomModel(baseModel)
-        );
+        CustomModel carModel = new CustomModel();
+        carModel.addToPriority(If("!car_access", MULTIPLY, "0"));
+        carModel.addToSpeed(If("true", LIMIT, "car_average_speed"));
+
+        Profile carProfile = new Profile("car")
+                .setWeighting("custom")
+                .setCustomModel(carModel);
+
+        CustomModel footModel = new CustomModel();
+
+        footModel.addToPriority(If("!foot_access", MULTIPLY, "0"));
+        footModel.addToSpeed(If("true", LIMIT, "foot_average_speed"));
+
+        Profile footProfile = new Profile("foot")
+                .setWeighting("custom")
+                .setCustomModel(footModel);
+
+        hopper.setProfiles(carProfile, footProfile);
+
+        // Disable CH for dynamic routing support
+        hopper.getCHPreparationHandler().setCHProfiles(Collections.emptyList());
 
         hopper.importOrLoad();
 

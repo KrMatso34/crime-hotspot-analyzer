@@ -12,13 +12,19 @@ import { TransportationSelector } from './components/TransportationSelector/Tran
 
 export default function RouteSelectorPanel({ 
 	setCamCoords, 
+	route,
 	setRoute, 
 	heatMap, 
+	riskZones,
+	setStreetlightData,
 	routeInstructions=[], 
 	finishRoute, 
 	heatMapFilters,
 	setFilterTimePeriod,
-	setFilterIgnoreTag 
+	setFilterIgnoreTag,
+	toggleRiskZone,
+	streetlightOverride,
+	setStreetlightOverride,
 }) {
 	const [transportationMethod, setTransportationMethod] = useState('car');
 
@@ -26,9 +32,12 @@ export default function RouteSelectorPanel({
 		<div className={clsx(styles.routeSelectorPanel)}>
 			<DestinationForm 
 				setCamCoords={setCamCoords} 
-				setRoute={setRoute}
+				route={route} setRoute={setRoute}
 				heatMap={heatMap}
+				riskZones={riskZones}
+				setStreetlightData={setStreetlightData}
 				transportationMethod={transportationMethod}
+				useStreetlights={streetlightOverride}
 			/>
 
 			<div className={clsx(styles.detailsContainer)}>
@@ -43,6 +52,10 @@ export default function RouteSelectorPanel({
 								setFilterTimePeriod={setFilterTimePeriod} 
 								setFilterIgnoreTag={setFilterIgnoreTag}
 								heatMapFilters={heatMapFilters}
+								riskZones={riskZones}
+								toggleRiskZone={toggleRiskZone}
+								streetlightOverride={streetlightOverride}
+								setStreetlightOverride={setStreetlightOverride}
 							/>
 							<LiveAlertsDisplay setCamCoords={setCamCoords}/>
 						</>

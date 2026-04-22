@@ -36,11 +36,19 @@ public class RouteController {
         );
 
         List<HeatPoint> heatPoints = request.heatmapData.stream()
-            .map(p -> new HeatPoint(p.get(0), p.get(1), p.get(2)))
+                .map(p -> new HeatPoint(p.get(0), p.get(1), p.get(2)))
+                .toList();
+
+
+        List<HeatPoint> streetlightPoints = request.streetlightData.stream()
+                .map(p -> new HeatPoint(p.get(0), p.get(1), 1.0))
+                .toList();
+
+        List<Polygon> riskZones = request.riskZones.stream()
+            .map(z -> new Polygon(z))
             .toList();
 
-        HeatMapService heatMapService = new HeatMapService(heatPoints);
-
+        HeatMapService heatMapService = new HeatMapService(heatPoints, riskZones, streetlightPoints);
         heatMapService.adjustModel(requestModel, request.routePriority);
 
         GHRequest ghRequest = new GHRequest(request.fromLat, request.fromLon, request.toLat, request.toLon)

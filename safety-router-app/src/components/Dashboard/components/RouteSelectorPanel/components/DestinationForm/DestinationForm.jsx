@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { geocodeAddress, fetchRoute } from '@services/geocode'
 
@@ -7,11 +7,19 @@ import AddressInput from './components/AddressInput/AddressInput';
 import styles from './DestinationForm.module.css';
 import clsx from 'clsx';
 
-export default function DestinationForm({ setCamCoords, setRoute, heatMap, transportationMethod }) {
+import {clusterByGrid} from './util'
+
+export default function DestinationForm({ setCamCoords, setRoute, route, heatMap, riskZones, setStreetlightData, useStreetlights=true, transportationMethod }) {
 	const [origin, setOrigin] = useState('');
 	const [destination, setDestination] = useState('');
 	const [stops, setStops] = useState(['']);
 	const [isLoading, setIsLoading] = useState(false);
+
+	const routeTypeIndex = {
+		safest: 0,
+		balanced: 1,
+		fastest: 2,
+	}
 
 	const addStop = () => {
 		if (stops.length >= 5) {
@@ -39,15 +47,17 @@ export default function DestinationForm({ setCamCoords, setRoute, heatMap, trans
 
 			const result = await geocodeAddress(address);
 
-			if (!result?.lat || !result?.lon) return;
+			if (!result?.lat || !result?.lon) throw Error('Invalid lat/lon coords');
 
 			setCamCoords([parseFloat(result.lat), parseFloat(result.lon)], result);
 		} catch (err) {
 			console.error(err);
+			alert('Could not geolocate address')
+			throw err;
 		}
 	}
 
-	const makeRoute = async (routePriority) => {
+	const makeRoute = async (routePriority, streetlightData) => {
 		try {
 			// Group start and end with all inbetween stops
 			const points = [
@@ -67,17 +77,16 @@ export default function DestinationForm({ setCamCoords, setRoute, heatMap, trans
 				points: [],
 				time: 0,
 				label: '',
+				status: 'success'
 			};
-
-			console.log(transportationMethod)
 
 			// Fetch each route between stops and group together
 			for (let i = 0; i < points.length - 1; i++) {
 				const from = points[i];
 				const to = points[i + 1];
-				const leg = await fetchRoute(from, to, routePriority, heatMap, transportationMethod);
+				const leg = await fetchRoute(from, to, routePriority, heatMap, riskZones, streetlightData, transportationMethod);
 
-				console.log(`[${routePriority}] (${i+1}/${points.length}): ${leg.time}`);
+				//console.log(`[${routePriority}] (${i+1}/${points.length}): ${leg.time}`);
 
 				fullRoute.distance += leg.distance;
 				fullRoute.time += leg.time;
@@ -99,26 +108,135 @@ export default function DestinationForm({ setCamCoords, setRoute, heatMap, trans
 		}
 	}
 
+	const addRoute = (routeName, routeData) => {
+		setRoute((prev) => {
+			const next = [...prev];
+			next[routeTypeIndex[routeName]] = routeData;
+			return next;
+		})
+	}
+
+	const clearRoutes = () => {
+		setRoute([
+			{
+				status: 'loading',
+				distance: 0,
+				instructions: [],
+				points: [],
+				time: 0,
+				label: 'safest',
+			},
+			{
+				status: 'loading',
+				distance: 0,
+				instructions: [],
+				points: [],
+				time: 0,
+				label: 'balanced',
+			},
+			{
+				status: 'loading',
+				distance: 0,
+				instructions: [],
+				points: [],
+				time: 0,
+				label: 'fastest',
+			}
+		])
+	}
+
+	const setRouteError = (routeName) => {
+		setRoute((prev) => {
+			const next = [...prev];
+			next[routeTypeIndex[routeName]] = {
+				status: 'loading',
+				distance: 0,
+				instructions: [],
+				points: [],
+				time: 0,
+				label: routeName,
+			};
+			return next;
+		})
+	}
+
+	useEffect(() => {
+		if (route[0] && route[1] && route[2]) {
+			setIsLoading(false);
+		}
+	}, [route]);
+
+	const loadStreetLights = async (originLat, originLon, destinationLat, destinationLon) => {
+
+		if (!useStreetlights) return [];
+		
+		const minLat = Math.min(originLat, destinationLat);
+		const minLon = Math.min(originLon, destinationLon);
+		const maxLat = Math.max(originLat, destinationLat);
+		const maxLon = Math.max(originLon, destinationLon);
+
+		const res = await fetch(`http://localhost:4000/api/lights/${minLat}/${minLon}/${maxLat}/${maxLon}`);
+		const data = await res.json();
+
+		return clusterByGrid(
+			data.map(light => [Number(light.lat), Number(light.lon)]), 
+			{minLat, minLon, maxLat, maxLon}, 
+			15
+		)
+			.map(d => [d.lat, d.lon])
+
+
+		//return data.map(light => [light.lat, light.lon]).slice(0, Math.min(data.length, 100));
+	}
 
 	const submitRoute = async () => {
+		
 		setIsLoading(true);
+		clearRoutes();
+
 		try {
-			const safeRoute = await makeRoute('safest');
-			const balancedRoute = await makeRoute('balanced');
-			const fastestRoute = await makeRoute('fastest');
+			const originCoords = await geocodeAddress(origin);
+			const destinationCoords = await geocodeAddress(destination);
 
-			setRoute([safeRoute, balancedRoute, fastestRoute]);
 
-			// Fly to starting point
-			const startResult = await geocodeAddress(origin);
-			if (startResult?.lat && startResult?.lon) {
-				setCamCoords([parseFloat(startResult.lat), parseFloat(startResult.lon)], startResult);
-			}
+			const streetlightData = await loadStreetLights(originCoords.lat, originCoords.lon, destinationCoords.lat, destinationCoords.lon);
+			
+
+			setStreetlightData(streetlightData);
+
+
+			makeRoute('safest', streetlightData)
+				.then(
+					(value) => addRoute('safest', value)
+				)
+				.catch((err) => {
+					setRouteError('safest')
+					throw err;
+				})
+			makeRoute('balanced', streetlightData)
+				.then(
+					(value) => addRoute('balanced', value)
+				)
+				.catch((err) => {
+					setRouteError('balanced')
+					throw err;
+				})
+			makeRoute('fastest', streetlightData)
+				.then(
+					(value) => addRoute('fastest', value)
+				)
+				.catch((err) => {
+					setRouteError('fastest')
+					throw err;
+				})
+
+			flyToAddress(origin);
 		} catch (err) {
 			console.error(err);
 			alert('Could not calculate route');
-		} finally {
 			setIsLoading(false);
+		} finally {
+			
 		}
 	}
 
