@@ -13,16 +13,61 @@ import styles from './Map.module.css';
 import clsx from 'clsx';
 
 const svgIcon = L.divIcon({
-  html: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sun-icon lucide-sun"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>`,
-  className: styles.streetlightIcon,
-  iconSize: [24, 24],
-  iconAnchor: [12, 12]
+	html: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sun-icon lucide-sun"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>`,
+	className: styles.streetlightIcon,
+	iconSize: [24, 24],
+	iconAnchor: [12, 12]
+});
+
+const blueDotIcon = new L.Icon({
+	iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+	shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+	iconSize: [25, 41],
+	iconAnchor: [12, 41],
+	popupAnchor: [1, -34],
+	shadowSize: [41, 41]
 });
 
 export default function Map({ center, markerInfo, routeCoords=[], riskZones=[], streetlightData=[], heatData, selectedRouteIndex }) {
 	const [isDarkMode, setIsDarkMode] = useState(true);
 	const [routeScore, setRouteScore] = useState(0);
 	const [routeBoxPosition, setRouteBoxPosition] = useState([]);
+	const [deviceLocation, setDeviceLocation] = useState([]);
+
+	const getDeviceLocation = () => {
+		if (!navigator.geolocation) {
+			console.log("Geolocation is not supported by your browser.");
+			return;
+		}
+
+		const watchId = navigator.geolocation.watchPosition(
+		(pos) => {
+			const { latitude, longitude } = pos.coords;
+			setDeviceLocation([latitude, longitude]);
+		},
+			(err) => {handleLocationError(err)},
+			{ enableHighAccuracy: true }
+		);
+
+		return () => navigator.geolocation.clearWatch(watchId);
+	};
+
+	const handleLocationError = (error) => {
+		switch (error.code) {
+			case error.PERMISSION_DENIED:
+				console.log("User denied the request for Geolocation.");
+				break;
+			case error.POSITION_UNAVAILABLE:
+				console.log("Location information is unavailable.");
+				break;
+			case error.TIMEOUT:
+				console.log("The request to get user location timed out.");
+				break;
+			default:
+				console.log("An unknown error occurred.");
+				break;
+		}
+	};
 
 	
 	const getLineColor = (label) => {
@@ -36,6 +81,10 @@ export default function Map({ center, markerInfo, routeCoords=[], riskZones=[], 
 	}
 
 	const toggleDarkMode = () => setIsDarkMode(!isDarkMode);
+
+	useEffect(() => {
+		return getDeviceLocation();
+	}, []);
 
 	const lightModeUrl = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
 	const darkModeUrl = "https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png"; 
@@ -57,6 +106,12 @@ export default function Map({ center, markerInfo, routeCoords=[], riskZones=[], 
 						<p>{markerInfo.display_name ?? ''}</p>
 					</Popup>
 				</Marker>
+
+				{deviceLocation.length == 2 && 
+					<Marker position={deviceLocation} icon={blueDotIcon}>
+						<Popup>You are here</Popup>
+					</Marker>
+				}
 
 				{routeBoxPosition.length > 0 ? <Marker position={routeBoxPosition} interactive={false}>
 					<Tooltip

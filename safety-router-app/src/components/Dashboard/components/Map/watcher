@@ -1,0 +1,45 @@
+import React, { useEffect, useState, useRef } from 'react';
+
+const MapTracker = () => {
+  const [position, setPosition] = useState(null);
+  const watchId = useRef(null); // Store the ID to clear it later
+
+  const startTracking = () => {
+    if (!navigator.geolocation) return;
+
+    // Start watching
+    watchId.current = navigator.geolocation.watchPosition(
+      (pos) => {
+        const { latitude, longitude, speed, heading } = pos.coords;
+        setPosition({ latitude, longitude, speed, heading });
+        console.log("Movement detected!");
+      },
+      (err) => console.error(err),
+      {
+        enableHighAccuracy: true,
+        maximumAge: 0,
+        timeout: 5000
+      }
+    );
+  };
+
+  const stopTracking = () => {
+    if (watchId.current !== null) {
+      navigator.geolocation.clearWatch(watchId.current);
+      watchId.current = null;
+    }
+  };
+
+  // Always clean up when the component unmounts
+  useEffect(() => {
+    return () => stopTracking();
+  }, []);
+
+  return (
+    <div>
+      <button onClick={startTracking}>Start Navigation</button>
+      <button onClick={stopTracking}>Stop</button>
+      {position && <p>Speed: {position.speed || 0} m/s</p>}
+    </div>
+  );
+};

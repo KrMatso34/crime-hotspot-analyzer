@@ -20,8 +20,10 @@ Other navigation apps take speed as the top-most user priority, which may encour
 
 Map of Washington roads and cities
 Specify addresses for route origin, destination, and up to 5 additional stops
-Construct multiple routes with different priorities between safest and quickest
+Construct multiple routes with different priorities between safest, balanced, and quickest
 Live heat map displaying hot spots of high risk areas
+Prioritize Seattle routes based on acceses to streetlights during dark hours
+Historical high risk areas in Seattle are displayed on the map and routed away from
 Personalized toggles to specify user preference of what crime data to take into account
 Live crime alerts messages to display most recent Seattle crime incidents
 
@@ -55,11 +57,11 @@ N/A
 
 # Usage
 
-Run javascript backend: 
+Run javascript backend (AWS fetcher): 
 cd ./safety-router-app/server
 node server/index.js
 
-Run java backend: 
+Run java backend (Router): 
 cd ./dynamic-router-server
 run through main
 
