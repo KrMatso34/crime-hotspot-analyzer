@@ -9,3 +9,9 @@
 	margin: 24px auto;
 	max-width: 420px;
 }
+
+@media (max-width: 768px) {
+	.startNavigationPanel {
+		display: none;
+	}
+}

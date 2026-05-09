@@ -1,0 +1,112 @@
+/* High-quality Leaflet overrides for crisp rendering */
+
+/* Custom marker styling */
+.custom-marker-icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: transparent;
+	border: none;
+}
+
+.custom-marker-icon svg {
+	transition: transform 0.2s ease;
+}
+
+.custom-marker-icon:hover svg {
+	transform: scale(1.1);
+}
+
+/* Optimize tile rendering for high-definition displays */
+.leaflet-tile-container img {
+	image-rendering: -webkit-optimize-contrast;
+	image-rendering: crisp-edges;
+	backface-visibility: hidden;
+	-webkit-backface-visibility: hidden;
+}
+
+/* Improve marker rendering */
+.leaflet-marker-icon {
+	backface-visibility: hidden;
+	-webkit-backface-visibility: hidden;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+/* Optimize polyline rendering */
+.leaflet-interactive {
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+/* Better popup styling */
+.leaflet-popup-content-wrapper {
+	border-radius: 8px;
+	box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+.leaflet-popup-tip {
+	background: white;
+	box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Improve control styling */
+.leaflet-control {
+	border-radius: 6px;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.leaflet-control-zoom-in,
+.leaflet-control-zoom-out {
+	font-size: 16px;
+	line-height: 24px;
+	transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.leaflet-control-zoom-in:hover,
+.leaflet-control-zoom-out:hover {
+	background-color: #f4f4f4;
+	transform: scale(1.05);
+}
+
+.leaflet-control-zoom-in:active,
+.leaflet-control-zoom-out:active {
+	transform: scale(0.95);
+}
+
+/* Attribution style */
+.leaflet-control-attribution {
+	background: rgba(255, 255, 255, 0.8);
+	backdrop-filter: blur(4px);
+	border-radius: 4px;
+	font-size: 12px;
+}
+
+/* Smooth container animations */
+.leaflet-container {
+	will-change: transform;
+	transform: translateZ(0);
+}
+
+/* High-DPI support */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+	.leaflet-tile-container img {
+		image-rendering: -webkit-optimize-contrast;
+		image-rendering: crisp-edges;
+	}
+}
+
+/* Touch-friendly improvements */
+@media (hover: none) and (pointer: coarse) {
+	.leaflet-control-zoom-in,
+	.leaflet-control-zoom-out {
+		width: 40px;
+		height: 40px;
+		font-size: 18px;
+	}
+
+	.leaflet-popup-content-wrapper {
+		font-size: 15px;
+	}
+}
