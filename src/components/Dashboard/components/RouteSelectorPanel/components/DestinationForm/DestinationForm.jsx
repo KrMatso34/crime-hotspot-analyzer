@@ -1,22 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 
-import { geocodeAddress, fetchRoute } from '@services/geocode';
+import { geocodeAddress, fetchRoute, isLocationValid } from '@services/geocode';
+import { calculateRouteRisk } from '@services/riskScoring';
 
 import AddressInput from './components/AddressInput/AddressInput';
 
 import styles from './DestinationForm.module.css';
 import clsx from 'clsx';
 
-export default function DestinationForm({ setCamCoords, setRouteCoords }) {
+export default function DestinationForm({ setCamCoords, setRouteCoords, onRouteSelected, crimeHotspots = [] }) {
   const [origin, setOrigin] = useState('');
   const [destination, setDestination] = useState('');
   const [stops, setStops] = useState(['']); // array of stop addresses
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   // Add a new empty stop input, limit to 5 stops
   const addStop = () => {
     if (stops.length >= 5) {
-      alert('Maximum 5 stops allowed');
+      setError('Maximum 5 stops allowed');
+      setTimeout(() => setError(''), 3000);
       return;
     }
     setStops([...stops, '']);
@@ -38,17 +41,34 @@ export default function DestinationForm({ setCamCoords, setRouteCoords }) {
 
   const flyToAddress = async (address) => {
     try {
+      setError('');
       if (!address) return;
       const result = await geocodeAddress(address);
-      if (!result?.lat || !result?.lon) return;
-      setCamCoords([parseFloat(result.lat), parseFloat(result.lon)], result);
+      if (!result?.lat || !result?.lon) {
+        setError('Address not found');
+        return;
+      }
+      
+      const lat = parseFloat(result.lat);
+      const lon = parseFloat(result.lon);
+      
+      // Check if location is in valid area
+      if (!isLocationValid(lat, lon)) {
+        setError('Location outside Seattle/Bellevue service area');
+        return;
+      }
+      
+      setCamCoords([lat, lon], result);
     } catch (err) {
       console.error(err);
+      setError(err.message || 'Could not find location');
+      setTimeout(() => setError(''), 3000);
     }
   };
 
   const submitRoute = async () => {
     setIsLoading(true);
+    setError('');
     try {
       // Build full list: origin → stops → destination
       const points = [
@@ -58,8 +78,28 @@ export default function DestinationForm({ setCamCoords, setRouteCoords }) {
       ].filter(Boolean);
 
       if (points.length < 2) {
-        alert('Please enter at least a start and destination');
+        setError('Please enter at least a start and destination');
+        setIsLoading(false);
         return;
+      }
+
+      // Verify all locations are in valid service area
+      for (const point of points) {
+        try {
+          const result = await geocodeAddress(point);
+          const lat = parseFloat(result.lat);
+          const lon = parseFloat(result.lon);
+          
+          if (!isLocationValid(lat, lon)) {
+            setError(`"${point}" is outside the Seattle/Bellevue service area`);
+            setIsLoading(false);
+            return;
+          }
+        } catch (err) {
+          setError(`Could not verify location: ${point}`);
+          setIsLoading(false);
+          return;
+        }
       }
 
       let fullRoute = [];
@@ -80,14 +120,26 @@ export default function DestinationForm({ setCamCoords, setRouteCoords }) {
 
       setRouteCoords(fullRoute);
 
+      // Calculate risk score for the route using crime data
+      const riskScore = calculateRouteRisk(fullRoute, crimeHotspots);
+
       // Fly to starting point
       const startResult = await geocodeAddress(origin);
       if (startResult?.lat && startResult?.lon) {
         setCamCoords([parseFloat(startResult.lat), parseFloat(startResult.lon)], startResult);
       }
+
+      // Notify parent of route selection with risk data
+      if (onRouteSelected) {
+        onRouteSelected({
+          riskAssessment: riskScore,
+          distance: null, // Will be set from API
+          duration: null  // Will be set from API
+        });
+      }
     } catch (err) {
       console.error(err);
-      alert('Could not calculate route');
+      setError(err.message || 'Could not calculate route');
     } finally {
       setIsLoading(false);
     }
@@ -95,9 +147,25 @@ export default function DestinationForm({ setCamCoords, setRouteCoords }) {
 
   return (
     <div className={clsx(styles.destinationForm)}>
-      <p>Seattle and Bellevue Area</p>
+      <p style={{ margin: '0 0 12px 0', fontSize: '16px', fontWeight: '600', color: '#1a1a1a' }}>Seattle and Bellevue Area</p>
 
-      <div>
+      {error && (
+        <div style={{
+          padding: '10px 12px',
+          marginBottom: '12px',
+          backgroundColor: '#ffe6e6',
+          border: '1px solid #ff6b6b',
+          borderRadius: '6px',
+          color: '#d32f2f',
+          fontSize: '13px',
+          fontWeight: '500',
+          animation: 'slideIn 0.3s ease'
+        }}>
+          ⚠️ {error}
+        </div>
+      )}
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {/* Starting point */}
         <AddressInput
           placeholder="Enter starting point..."
@@ -105,8 +173,6 @@ export default function DestinationForm({ setCamCoords, setRouteCoords }) {
           onChange={(e) => setOrigin(e.target.value)}
           flyTo={() => flyToAddress(origin)}
         />
-
-        <br />
 
         {/* Destination */}
         <AddressInput
@@ -116,46 +182,52 @@ export default function DestinationForm({ setCamCoords, setRouteCoords }) {
           flyTo={() => flyToAddress(destination)}
         />
 
-        <br />
-
         {/* Stops section */}
-        <div style={{ marginTop: '15px' }}>
-          <h4 style={{ margin: '0 0 8px 0' }}>Add stops (optional)</h4>
+        <div style={{ marginTop: '8px' }}>
+          <h4 style={{ margin: '0 0 6px 0', fontSize: '13px', fontWeight: '600' }}>Add stops (optional)</h4>
 
-          {stops.map((stop, index) => (
-            <div
-              key={index}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                marginBottom: '8px',
-              }}
-            >
-              <AddressInput
-                placeholder={`Stop ${index + 1}...`}
-                value={stop}
-                onChange={(e) => updateStop(index, e.target.value)}
-                flyTo={() => flyToAddress(stop)}
-              />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {stops.map((stop, index) => (
+              <div
+                key={index}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+              >
+                <AddressInput
+                  placeholder={`Stop ${index + 1}...`}
+                  value={stop}
+                  onChange={(e) => updateStop(index, e.target.value)}
+                  flyTo={() => flyToAddress(stop)}
+                />
 
-              {stops.length > 1 && (
-                <button
-                  onClick={() => removeStop(index)}
-                  style={{
-                    marginLeft: '10px',
-                    backgroundColor: '#ff4d4d',
-                    color: 'white',
-                    border: 'none',
-                    padding: '6px 10px',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                  }}
-                >
-                  ×
-                </button>
-              )}
-            </div>
-          ))}
+                {stops.length > 1 && (
+                  <button
+                    onClick={() => removeStop(index)}
+                    style={{
+                      minWidth: '32px',
+                      height: '32px',
+                      backgroundColor: '#ff4d4d',
+                      color: 'white',
+                      border: 'none',
+                      padding: '4px 8px',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontSize: '18px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
 
           <button
             onClick={addStop}
@@ -166,7 +238,10 @@ export default function DestinationForm({ setCamCoords, setRouteCoords }) {
               padding: '8px 12px',
               borderRadius: '4px',
               cursor: 'pointer',
-              marginTop: '8px',
+              marginTop: '6px',
+              width: '100%',
+              fontSize: '14px',
+              fontWeight: '600',
             }}
           >
             + Add another stop
@@ -178,13 +253,16 @@ export default function DestinationForm({ setCamCoords, setRouteCoords }) {
         onClick={submitRoute}
         disabled={isLoading}
         style={{
-          marginTop: '20px',
-          padding: '10px 20px',
+          marginTop: '12px',
+          padding: '10px 16px',
           backgroundColor: isLoading ? '#ccc' : '#2196F3',
           color: 'white',
           border: 'none',
-          borderRadius: '4px',
+          borderRadius: '8px',
           cursor: isLoading ? 'not-allowed' : 'pointer',
+          fontSize: '15px',
+          fontWeight: '600',
+          width: '100%',
         }}
       >
         {isLoading ? 'Calculating...' : 'Get Safe Directions'}

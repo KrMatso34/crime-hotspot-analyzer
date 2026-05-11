@@ -10,6 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.1045.0",
+    "@aws-sdk/client-s3": "^3.1045.0",
+    "@aws-sdk/lib-dynamodb": "^3.1045.0",
+    "@aws-sdk/util-stream-node": "^3.370.0",
     "axios": "^1.13.4",
     "clsx": "^2.1.1",
     "cors": "^2.8.6",

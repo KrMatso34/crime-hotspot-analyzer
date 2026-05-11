@@ -1,6 +1,29 @@
 import axios from 'axios';
 
-export async function geocodeAddress(query) {
+// Seattle/Bellevue area bounds for location verification
+const VALID_AREA_BOUNDS = {
+	north: 47.8,
+	south: 47.4,
+	east: -122.0,
+	west: -122.5
+};
+
+/**
+ * Verify if coordinates are within the valid service area
+ */
+export function isLocationValid(lat, lon) {
+	return (
+		lat >= VALID_AREA_BOUNDS.south &&
+		lat <= VALID_AREA_BOUNDS.north &&
+		lon >= VALID_AREA_BOUNDS.west &&
+		lon <= VALID_AREA_BOUNDS.east
+	);
+}
+
+/**
+ * Geocode an address with optional location verification
+ */
+export async function geocodeAddress(query, verifyLocation = false) {
 	const res = await axios.get(
 		'https://nominatim.openstreetmap.org/search',
 		{
@@ -15,7 +38,23 @@ export async function geocodeAddress(query) {
 		}
 	)
 
-	return res.data[0];
+	const result = res.data[0];
+	
+	if (!result) {
+		throw new Error('Address not found');
+	}
+
+	// Verify location is in valid service area
+	if (verifyLocation) {
+		const lat = parseFloat(result.lat);
+		const lon = parseFloat(result.lon);
+		
+		if (!isLocationValid(lat, lon)) {
+			throw new Error('Location is outside the Seattle/Bellevue service area');
+		}
+	}
+
+	return result;
 }
 
 export async function fetchRoute(origin, destination) {

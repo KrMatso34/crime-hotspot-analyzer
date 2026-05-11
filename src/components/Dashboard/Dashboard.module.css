@@ -1,12 +1,146 @@
 .dashboard {
-	display: grid;
-	grid-template-rows: auto 1fr;
-	height: 100vh;
-	background: linear-gradient(120deg, #e0e7ff 0%, #f8fafc 100%);
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+	background: #ffffff;
+	display: flex;
+	flex-direction: column;
+	z-index: 1;
 }
 
-.content {
+/* Map background layer - fills entire screen */
+.mapBackground {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	width: 100%;
+	height: 100%;
+	z-index: 1;
+	background-color: #e8f0fe;
+	overflow: hidden;
+}
+
+.headerOverlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	z-index: 40;
+	display: none;
+	pointer-events: auto;
+}
+
+.bottomSheetHandle {
+	width: 100%;
 	display: flex;
-	gap: 24px;
-	padding: 24px;
+	justify-content: center;
+	align-items: center;
+	padding: 12px 0;
+	cursor: grab;
+	user-select: none;
+	transition: background-color 0.2s ease;
+	flex-shrink: 0;
+}
+
+.bottomSheetHandle:active {
+	cursor: grabbing;
+	background-color: rgba(0, 0, 0, 0.02);
+}
+
+.handle {
+	width: 40px;
+	height: 5px;
+	background: #d0d0d0;
+	border-radius: 2.5px;
+	transition: background-color 0.2s ease;
+}
+
+.bottomSheetHandle:hover .handle {
+	background-color: #999;
+}
+
+.panelContent {
+	flex: 1;
+	overflow-y: auto;
+	padding: 16px;
+	width: 100%;
+	-webkit-overflow-scrolling: touch;
+}
+
+.bottomSheet {
+	position: fixed;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	max-height: 50vh;
+	min-height: 80px;
+	background: white;
+	border-radius: 20px 20px 0 0;
+	box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.12);
+	z-index: 100;
+	display: flex;
+	flex-direction: column;
+	transition: max-height 0.35s cubic-bezier(0.23, 1, 0.320, 1);
+	width: 100%;
+	pointer-events: auto;
+}
+
+.bottomSheet.expanded {
+	max-height: 90vh;
+	min-height: 300px;
+}
+
+/* Desktop layout */
+@media (min-width: 769px) {
+	.dashboard {
+		position: relative;
+		display: grid;
+		grid-template-columns: 350px 1fr;
+		grid-template-rows: auto 1fr;
+		height: 100vh;
+	}
+
+	.headerOverlay {
+		display: block;
+		position: static;
+		grid-column: 1;
+		grid-row: 1;
+		z-index: 10;
+	}
+
+	.bottomSheet {
+		position: static;
+		grid-column: 1;
+		grid-row: 2;
+		max-height: none;
+		min-height: auto;
+		border-radius: 0;
+		box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+		width: 350px;
+		overflow-y: auto;
+		bottom: auto;
+		left: auto;
+		right: auto;
+		height: 100%;
+	}
+
+	.bottomSheetHandle {
+		display: none;
+	}
+
+	.panelContent {
+		padding: 24px;
+	}
+
+	.bottomSheet.expanded {
+		max-height: none;
+		min-height: auto;
+	}
 }
