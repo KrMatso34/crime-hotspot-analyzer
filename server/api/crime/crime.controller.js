@@ -1,18 +1,18 @@
 /**
  * Crime Data Controller
- * Fetches and aggregates crime data from DynamoDB
+ * Fetches and aggregates crime data from AWS S3
  */
 
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { QueryCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
+import { S3Client, GetObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
+import { sdkStreamMixin } from '@aws-sdk/util-stream-node';
 
-// Initialize DynamoDB client
+// Initialize S3 client
 // Uses AWS_REGION and AWS credentials from environment variables
-const client = new DynamoDBClient({ region: process.env.AWS_REGION || 'us-west-2' });
+const s3Client = new S3Client({ region: process.env.AWS_REGION || 'us-west-2' });
 
-// DynamoDB table name (configure via environment variable)
-const CRIMES_TABLE = process.env.DYNAMODB_CRIMES_TABLE || 'CrimeData';
-const GSI_LOCATION = 'LocationIndex'; // Global Secondary Index for location queries
+// S3 bucket configuration
+const CRIMES_BUCKET = process.env.AWS_S3_CRIMES_BUCKET || 'kags-crime-data-dev';
+const CRIMES_PREFIX = process.env.AWS_S3_CRIMES_PREFIX || 'crime-data';
 
 /**
  * Calculate distance between two coordinates (Haversine formula)
@@ -37,44 +37,70 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 }
 
 /**
- * Fetch crime data from DynamoDB
- * Retrieves crimes from the past 30 days
+ * Fetch crime data from AWS S3
+ * Reads crime data files from the S3 bucket
  * @returns {Promise<Array>} Array of crime records
  */
-async function getCrimeDataFromDynamoDB() {
+async function getCrimeDataFromS3() {
   try {
-    // Query crimes from the past 30 days
-    const thirtyDaysAgo = Math.floor((Date.now() - 30 * 24 * 60 * 60 * 1000) / 1000);
-    
-    const command = new ScanCommand({
-      TableName: CRIMES_TABLE,
-      FilterExpression: '#dt > :thirtyDaysAgo',
-      ExpressionAttributeNames: {
-        '#dt': 'timestamp'
-      },
-      ExpressionAttributeValues: {
-        ':thirtyDaysAgo': thirtyDaysAgo
-      }
+    // List objects in S3 bucket
+    const listCommand = new ListObjectsV2Command({
+      Bucket: CRIMES_BUCKET,
+      Prefix: CRIMES_PREFIX
     });
 
-    const response = await client.send(command);
-    
-    // Transform DynamoDB items to match our data structure
-    const crimes = (response.Items || []).map(item => ({
-      id: item.id,
-      lat: parseFloat(item.latitude),
-      lon: parseFloat(item.longitude),
-      crimeType: item.crimeType,
-      date: new Date(item.timestamp * 1000),
-      severity: item.severity || 'medium',
-      address: item.address,
-      description: item.description
-    }));
+    const listResponse = await s3Client.send(listCommand);
+    const objects = listResponse.Contents || [];
 
-    return crimes;
+    let allCrimes = [];
+
+    // Fetch and parse each JSON file
+    for (const obj of objects) {
+      if (!obj.Key.endsWith('.json')) continue; // Skip non-JSON files
+
+      try {
+        const getCommand = new GetObjectCommand({
+          Bucket: CRIMES_BUCKET,
+          Key: obj.Key
+        });
+
+        const response = await s3Client.send(getCommand);
+        
+        // Convert stream to string
+        const stream = sdkStreamMixin(response.Body);
+        let data = '';
+        
+        for await (const chunk of stream) {
+          data += chunk;
+        }
+
+        const crimeData = JSON.parse(data);
+        const crimes = Array.isArray(crimeData) ? crimeData : crimeData.crimes || [];
+
+        // Transform S3 data to match our structure
+        const transformedCrimes = crimes.map(item => ({
+          id: item.id || `${item.latitude}-${item.longitude}-${item.timestamp}`,
+          lat: parseFloat(item.latitude || item.lat),
+          lon: parseFloat(item.longitude || item.lon),
+          crimeType: item.crimeType || item.crime_type || 'Unknown',
+          date: new Date(item.timestamp || item.date),
+          severity: item.severity || 'medium',
+          address: item.address,
+          description: item.description
+        }));
+
+        allCrimes = allCrimes.concat(transformedCrimes);
+      } catch (err) {
+        console.warn(`Error parsing S3 object ${obj.Key}:`, err.message);
+        continue;
+      }
+    }
+
+    console.log(`Loaded ${allCrimes.length} crimes from S3 bucket ${CRIMES_BUCKET}`);
+    return allCrimes;
   } catch (error) {
-    console.error('Error fetching from DynamoDB:', error);
-    // Fallback to mock data if DynamoDB fails
+    console.error('Error fetching from S3:', error);
+    // Fallback to mock data if S3 fails
     console.warn('Falling back to mock crime data');
     return getMockCrimeData();
   }
@@ -113,11 +139,11 @@ function getMockCrimeData() {
 
 /**
  * Fetch all crime hotspots with aggregation
- * Queries DynamoDB for recent crimes and aggregates them into hotspots
+ * Reads crime data from S3 and aggregates them into hotspots
  */
 export async function getHotspots(req, res) {
   try {
-    const crimes = await getCrimeDataFromDynamoDB();
+    const crimes = await getCrimeDataFromS3();
     
     // Aggregate crimes by location (rounded to 0.001 degree precision ~100m)
     const hotspotMap = new Map();
@@ -169,7 +195,7 @@ export async function getHotspots(req, res) {
 
 /**
  * Fetch crimes within a specified area
- * Queries DynamoDB for crimes within a geo-radius
+ * Reads crime data from S3 and filters by geo-radius
  */
 export async function getCrimesInArea(req, res) {
   try {
@@ -183,8 +209,8 @@ export async function getCrimesInArea(req, res) {
     const centerLon = parseFloat(lon);
     const radius = parseFloat(radiusKm);
     
-    // Fetch all crimes (in production, could use DynamoDB geo-query)
-    const allCrimes = await getCrimeDataFromDynamoDB();
+    // Fetch all crimes from S3
+    const allCrimes = await getCrimeDataFromS3();
     
     // Filter crimes within radius
     const crimes = allCrimes.filter(crime => {
