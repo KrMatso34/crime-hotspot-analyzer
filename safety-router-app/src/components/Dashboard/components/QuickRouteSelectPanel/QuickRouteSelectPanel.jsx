@@ -31,7 +31,7 @@ function formatDuration(ms) {
 	.join(' ');
 }
 
-function RouteButton({ name, time, dist, risk, status, active=false, className, ...props }) {
+function RouteButton({ name, time, dist, risk, status, score=0, active=false, className, ...props }) {
 	const routeColors = {
 		safest: 'cyan',
 		fastest: 'red',
@@ -46,32 +46,49 @@ function RouteButton({ name, time, dist, risk, status, active=false, className, 
 				active && styles.active
 			)} 
 			style={{'--route-color': routeColors[name] ?? 'white'}}
+			data-testid={name}
 			{...props}
 		>
 			{
 				(status=='success') ? (<>
-					<span>{name.toUpperCase()}</span>
-					<span>{formatDuration(time)}</span>
+					<span className={clsx(styles.cardTitle)}>{name.toUpperCase()}</span>
+					<span className={clsx(styles.riskScoreText)}>RISK: {score}</span>
 					<div>
+						<span>{formatDuration(time)}</span>
+						<br/>
 						<span>{Math.round(100*dist/1609)/100} mi</span>
-						<span>{risk}</span>
 					</div>
+				</>) : (
+				(status=='error') ? (<>
+					Error calculating route.
 				</>) : (<>
 					Calculating route...
 					<div className={styles.spinnerContainer}>
 						<LoadingSpinner/>
 					</div>
 				</>)
+				)
 			}
 			
 		</div>
 	)
 }
 
-export default function QuickRouteSelectPanel({ routesInfo, selectedIndex, setSelectedIndex }) {
+export default function QuickRouteSelectPanel({ routesInfo=[], selectedIndex, setSelectedIndex }) {
+	
+	const allRoutesReady = routesInfo.length == 3 && 
+				routesInfo.reduce((acc, item) => {
+					return acc && item.status == "success";
+				}, true)
 	
 	return (
-		<div className={clsx(styles.quickRouteSelectPanel)}>
+		<div 
+			className={clsx(styles.quickRouteSelectPanel)} 
+			id="quick-select-panel"
+			data-all-routes-ready={
+				(allRoutesReady) ? 'true' : 'false'
+			}
+		>
 			{routesInfo.map((route, index) => (
 				<RouteButton 
 					key={index} 
@@ -80,6 +97,7 @@ export default function QuickRouteSelectPanel({ routesInfo, selectedIndex, setSe
 					dist={route.distance} 
 					risk={route.risk} 
 					status={route.status}
+					score={route.score}
 					active={index == selectedIndex} 
 					onClick={() => setSelectedIndex(index)}
 					className={index == 0 ? styles.leftButton : (index == routesInfo.length-1 ? styles.rightButton: '')}

@@ -175,6 +175,72 @@
           [-122.3050, 47.7240]
         ]]
       }
+    },
+
+
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "bellevue_downtown",
+        "name": "Downtown Bellevue",
+        "riskLevel": "elevated",
+        "primaryCrimeTypes": ["theft", "auto_burglary", "robbery"],
+        "notes": "~1,701 incidents/yr in NW quadrant. Highest density in Bellevue. CrimeGrade 2024."
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-122.2050, 47.6175],
+          [-122.1920, 47.6175],
+          [-122.1920, 47.6090],
+          [-122.2050, 47.6090],
+          [-122.2050, 47.6175]
+        ]]
+      }
+    },
+
+
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "bellevue_crossroads",
+        "name": "Crossroads",
+        "riskLevel": "elevated",
+        "primaryCrimeTypes": ["theft", "assault", "auto_burglary"],
+        "notes": "5.69 violent crimes per 1k residents. C- grade. CrimeGrade 2024."
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-122.1540, 47.6210],
+          [-122.1380, 47.6210],
+          [-122.1380, 47.6100],
+          [-122.1540, 47.6100],
+          [-122.1540, 47.6210]
+        ]]
+      }
+    },
+
+
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "bellevue_factoria",
+        "name": "Factoria",
+        "riskLevel": "elevated",
+        "primaryCrimeTypes": ["theft", "motor_vehicle_theft", "burglary"],
+        "notes": "High property crime corridor. Nationally high auto theft rate. NeighborhoodScout 2024."
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-122.1680, 47.5730],
+          [-122.1510, 47.5730],
+          [-122.1510, 47.5620],
+          [-122.1680, 47.5620],
+          [-122.1680, 47.5730]
+        ]]
+      }
     }
   ]
 }

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, createContext } from 'react';
 
 import { geocodeAddress, fetchRoute } from '@services/geocode'
 
@@ -6,14 +6,32 @@ import AddressInput from './components/AddressInput/AddressInput';
 
 import styles from './DestinationForm.module.css';
 import clsx from 'clsx';
+import { LocateFixed, Map } from 'lucide-react'
 
-import {clusterByGrid} from './util'
+import { scoreRoute } from '@services/geocode';
 
-export default function DestinationForm({ setCamCoords, setRoute, route, heatMap, riskZones, setStreetlightData, useStreetlights=true, transportationMethod }) {
+import {clusterByGrid, distanceToPath} from './util'
+import { alert } from '../../../Notifications/useNotification'
+
+export default function DestinationForm({ 
+	setCamCoords, 
+	setRoute, 
+	route, 
+	selectedRouteIndex,
+	heatMap, 
+	riskZones, 
+	setStreetlightData, 
+	useStreetlights=true, 
+	transportationMethod, 
+	geolocation,
+	mapFocusPoint,
+}) {
 	const [origin, setOrigin] = useState('');
 	const [destination, setDestination] = useState('');
 	const [stops, setStops] = useState(['']);
 	const [isLoading, setIsLoading] = useState(false);
+	const [addressInputFocus, setAddressInputFocus] = useState('');
+	const [retriggerSavedIndex, setRetriggerSavedIndex] = useState(0);
 
 	const routeTypeIndex = {
 		safest: 0,
@@ -57,13 +75,13 @@ export default function DestinationForm({ setCamCoords, setRoute, route, heatMap
 		}
 	}
 
-	const makeRoute = async (routePriority, streetlightData) => {
+	const makeRoute = async (routePriority, start=origin, end=destination, streetlightData) => {
 		try {
 			// Group start and end with all inbetween stops
 			const points = [
-				origin.trim(),
+				start.trim(),
 				...stops.map(s => s.trim()).filter(Boolean),
-				destination.trim()
+				end.trim()
 			].filter(Boolean);
 
 			if (points.length < 2) {
@@ -71,22 +89,13 @@ export default function DestinationForm({ setCamCoords, setRoute, route, heatMap
 				return;
 			}
 
-			const fullRoute = {
-				distance: 0,
-				instructions: [],
-				points: [],
-				time: 0,
-				label: '',
-				status: 'success'
-			};
+			const fullRoute = makeRouteObject({status: 'success'})
 
 			// Fetch each route between stops and group together
 			for (let i = 0; i < points.length - 1; i++) {
 				const from = points[i];
 				const to = points[i + 1];
 				const leg = await fetchRoute(from, to, routePriority, heatMap, riskZones, streetlightData, transportationMethod);
-
-				//console.log(`[${routePriority}] (${i+1}/${points.length}): ${leg.time}`);
 
 				fullRoute.distance += leg.distance;
 				fullRoute.time += leg.time;
@@ -102,6 +111,8 @@ export default function DestinationForm({ setCamCoords, setRoute, route, heatMap
 				}
 			}
 
+			fullRoute.score = scoreRoute(fullRoute.points, heatMap)
+
 			return fullRoute;
 		} catch (err) {
 			throw err;
@@ -116,46 +127,31 @@ export default function DestinationForm({ setCamCoords, setRoute, route, heatMap
 		})
 	}
 
+	const makeRouteObject = (data) => {
+		return {
+			distance: 0,
+			instructions: [],
+			points: [],
+			time: 0,
+			label: '',
+			status: 'success',
+			score: 0,
+			...data
+		}
+	}
+
 	const clearRoutes = () => {
 		setRoute([
-			{
-				status: 'loading',
-				distance: 0,
-				instructions: [],
-				points: [],
-				time: 0,
-				label: 'safest',
-			},
-			{
-				status: 'loading',
-				distance: 0,
-				instructions: [],
-				points: [],
-				time: 0,
-				label: 'balanced',
-			},
-			{
-				status: 'loading',
-				distance: 0,
-				instructions: [],
-				points: [],
-				time: 0,
-				label: 'fastest',
-			}
+			makeRouteObject({status: 'loading', label: 'safest'}),
+			makeRouteObject({status: 'loading', label: 'balanced'}),
+			makeRouteObject({status: 'loading', label: 'fastest'}),
 		])
 	}
 
 	const setRouteError = (routeName) => {
 		setRoute((prev) => {
 			const next = [...prev];
-			next[routeTypeIndex[routeName]] = {
-				status: 'loading',
-				distance: 0,
-				instructions: [],
-				points: [],
-				time: 0,
-				label: routeName,
-			};
+			next[routeTypeIndex[routeName]] = makeRouteObject({status: 'error', label: routeName})
 			return next;
 		})
 	}
@@ -189,23 +185,20 @@ export default function DestinationForm({ setCamCoords, setRoute, route, heatMap
 		//return data.map(light => [light.lat, light.lon]).slice(0, Math.min(data.length, 100));
 	}
 
-	const submitRoute = async () => {
+	const submitRoute = async (start=origin, end=destination) => {
 		
 		setIsLoading(true);
 		clearRoutes();
 
 		try {
-			const originCoords = await geocodeAddress(origin);
-			const destinationCoords = await geocodeAddress(destination);
-
+			const originCoords = await geocodeAddress(start);
+			const destinationCoords = await geocodeAddress(end);
 
 			const streetlightData = await loadStreetLights(originCoords.lat, originCoords.lon, destinationCoords.lat, destinationCoords.lon);
 			
-
 			setStreetlightData(streetlightData);
 
-
-			makeRoute('safest', streetlightData)
+			makeRoute('safest', start, end, streetlightData)
 				.then(
 					(value) => addRoute('safest', value)
 				)
@@ -213,7 +206,7 @@ export default function DestinationForm({ setCamCoords, setRoute, route, heatMap
 					setRouteError('safest')
 					throw err;
 				})
-			makeRoute('balanced', streetlightData)
+			makeRoute('balanced', start, end, streetlightData)
 				.then(
 					(value) => addRoute('balanced', value)
 				)
@@ -221,7 +214,7 @@ export default function DestinationForm({ setCamCoords, setRoute, route, heatMap
 					setRouteError('balanced')
 					throw err;
 				})
-			makeRoute('fastest', streetlightData)
+			makeRoute('fastest', start, end, streetlightData)
 				.then(
 					(value) => addRoute('fastest', value)
 				)
@@ -230,34 +223,84 @@ export default function DestinationForm({ setCamCoords, setRoute, route, heatMap
 					throw err;
 				})
 
-			flyToAddress(origin);
+			flyToAddress(start);
 		} catch (err) {
 			console.error(err);
 			alert('Could not calculate route');
 			setIsLoading(false);
-		} finally {
-			
 		}
+	}
+
+	const checkRouteRetrigger = () => {
+		if (route.length != 3 || !destination || geolocation.length != 2) return;
+		if (route[0].status != "success" || route[1].status != "success" || route[2].status != "success") return;
+
+		const threshold = 0.0018; // about 200 meters
+		const res = distanceToPath(geolocation, route[selectedRouteIndex].points, threshold, retriggerSavedIndex, setRetriggerSavedIndex);
+
+		if (!res) return;
+
+		alert.show("Wrong turn: Rerouting...", "error", 5000);
+
+		submitRoute(`${geolocation[0]}, ${geolocation[1]}`, destination);
+	}
+
+	useEffect(() => {
+		const intervalId = setInterval(() => {
+			checkRouteRetrigger();
+		}, 10000);
+
+		return () => clearInterval(intervalId)
+	})
+
+	function InsertLocationButton({ setValue, focusName='' }) {
+		if (addressInputFocus != focusName) return;
+
+		return (
+			<div>
+				<button 
+					disabled={geolocation.length == 0}
+					onClick={(ev) => setValue(`${geolocation[0]}, ${geolocation[1]}`)}
+					onMouseDown={(ev) => ev.preventDefault()}	
+					className={clsx(styles.insertLocationButton)}
+				>
+					<LocateFixed/> Use current location
+				</button>
+				<button 
+					disabled={mapFocusPoint.length == 0}
+					onClick={(ev) => setValue(`${mapFocusPoint[0]}, ${mapFocusPoint[1]}`)}
+					onMouseDown={(ev) => ev.preventDefault()}	
+					className={clsx(styles.insertLocationButton)}
+				>
+					<Map/> Choose location on map
+				</button>
+			</div>
+		)
 	}
 
 	return (
 		<div className={clsx(styles.destinationForm)}>
 			<p>Seattle and Bellevue Area</p>
-
 			<div>
 				<AddressInput 
 					placeholder='Enter starting point...'
 					value={origin}
 					onChange={(e) => setOrigin(e.target.value)}
 					flyTo={flyToAddress}
+					onFocus={() => setAddressInputFocus('origin')}
+					onBlur={() => setAddressInputFocus('')}
 				/>
+				<InsertLocationButton setValue={setOrigin} focusName={'origin'}/>
 				<br/>
 				<AddressInput 
 					placeholder='Enter destination...'
 					value={destination}
 					onChange={(e) => setDestination(e.target.value)}
 					flyTo={flyToAddress}
+					onFocus={() => setAddressInputFocus('destination')}
+					onBlur={() => setAddressInputFocus('')}
 				/>
+				<InsertLocationButton setValue={setDestination} focusName={'destination'}/>
 			</div>
 
 			<br />
@@ -297,7 +340,7 @@ export default function DestinationForm({ setCamCoords, setRoute, route, heatMap
 			</div>
 
 			<button
-				onClick={submitRoute}
+				onClick={() => submitRoute()}
 				disabled={isLoading}
 				className={clsx(styles.submitRouteButton, isLoading ? styles.loading : '')}
 			>

@@ -1,0 +1,31 @@
+
+-----------------------------------
+Record tests
+-----------------------------------
+
+# Record user inputs
+npx playwright codegen http://localhost:5173
+
+# Print formatted outputs to log file
+npx playwright test --reporter=./tests/customReporter.js
+
+-----------------------------------
+Running tests
+-----------------------------------
+
+# Run all tests (Headless):
+npx playwright test
+
+# Run tests in specific file only
+npx playwright test tests/directions.spec.js
+
+# Run and see the browser (Headed):
+npx playwright test --headed
+
+# See a UI Dashboard (Best for debugging):
+npx playwright test --ui
+
+--------------------------------------
+
+await page.getByRole('button', { name: 'Get Safe Directions' }).click();
+await expect(page.locator('#quick-select-panel')).toContainText(/./, { timeout: 15000 }); // Route created within 15 seconds

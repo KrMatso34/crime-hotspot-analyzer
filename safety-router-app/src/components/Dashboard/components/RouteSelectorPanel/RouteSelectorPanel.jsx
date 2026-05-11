@@ -14,6 +14,7 @@ export default function RouteSelectorPanel({
 	setCamCoords, 
 	route,
 	setRoute, 
+	selectedRouteIndex,
 	heatMap, 
 	riskZones,
 	setStreetlightData,
@@ -25,6 +26,8 @@ export default function RouteSelectorPanel({
 	toggleRiskZone,
 	streetlightOverride,
 	setStreetlightOverride,
+	geolocation,
+	mapFocusPoint,
 }) {
 	const [transportationMethod, setTransportationMethod] = useState('car');
 
@@ -32,12 +35,14 @@ export default function RouteSelectorPanel({
 		<div className={clsx(styles.routeSelectorPanel)}>
 			<DestinationForm 
 				setCamCoords={setCamCoords} 
-				route={route} setRoute={setRoute}
+				route={route} setRoute={setRoute} selectedRouteIndex={selectedRouteIndex}
 				heatMap={heatMap}
 				riskZones={riskZones}
 				setStreetlightData={setStreetlightData}
 				transportationMethod={transportationMethod}
 				useStreetlights={streetlightOverride}
+				geolocation={geolocation}
+				mapFocusPoint={mapFocusPoint}
 			/>
 
 			<div className={clsx(styles.detailsContainer)}>

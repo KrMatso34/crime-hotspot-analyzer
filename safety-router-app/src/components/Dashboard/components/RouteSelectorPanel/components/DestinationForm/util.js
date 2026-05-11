@@ -50,3 +50,43 @@ export function clusterByGrid(coords, bounds, divisions) {
 
     return results;
 }
+
+
+function distToSegment(p1, p2) {
+    return Math.sqrt(Math.pow(p1[0]-p2[0], 2) + Math.pow(p1[1]-p2[1], 2))
+}
+
+export function distanceToPath(point, path, threshold, guess, setGuess) {
+    const windowSize = 10;
+
+    let start = Math.max(0, guess - windowSize);
+    let end = Math.min(path.length-1, guess + windowSize);
+
+    let localMinDist = Infinity;
+    let localClosestIndex = guess;
+
+    for (let i = start; i < end; i++) {
+        const d = distToSegment(point, path[i]);
+        if (d < localMinDist) {
+            localMinDist = d;
+            localClosestIndex = i;
+        }
+    }
+
+    if (localMinDist < threshold) {
+        setGuess(localClosestIndex);
+        console.log(localMinDist)
+        return false; 
+    }
+
+    let globalMinDist = Infinity;
+    for (let i = 0; i < path.length - 1; i++) {
+        const d = distToSegment(point, path[i]);
+        if (d < globalMinDist) {
+            globalMinDist = d;
+            setGuess(i);
+        }
+    }
+    console.log(globalMinDist)
+    return globalMinDist > threshold;
+}

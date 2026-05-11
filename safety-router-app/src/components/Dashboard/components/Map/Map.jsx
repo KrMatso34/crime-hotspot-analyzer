@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
-import { MapContainer, TileLayer, Marker, Popup, Polyline, Tooltip, Polygon, SVGOverlay } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, Tooltip, Polygon, SVGOverlay, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
@@ -20,7 +20,7 @@ const svgIcon = L.divIcon({
 });
 
 const blueDotIcon = new L.Icon({
-	iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+	iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
 	shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
 	iconSize: [25, 41],
 	iconAnchor: [12, 41],
@@ -28,11 +28,34 @@ const blueDotIcon = new L.Icon({
 	shadowSize: [41, 41]
 });
 
-export default function Map({ center, markerInfo, routeCoords=[], riskZones=[], streetlightData=[], heatData, selectedRouteIndex }) {
+const redMarkerIcon = new L.Icon({
+	iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+	shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+	iconSize: [25, 41],
+	iconAnchor: [12, 41],
+	popupAnchor: [1, -34],
+	shadowSize: [41, 41]
+});
+
+
+
+export default function Map({ 
+	center, 
+	markerInfo, 
+	routeCoords=[], 
+	riskZones=[], 
+	streetlightData=[], 
+	heatData, 
+	selectedRouteIndex,
+	setGeoLocation,
+	setMapFocusPoint,
+	mapFocusPoint,
+}) {
 	const [isDarkMode, setIsDarkMode] = useState(true);
 	const [routeScore, setRouteScore] = useState(0);
 	const [routeBoxPosition, setRouteBoxPosition] = useState([]);
 	const [deviceLocation, setDeviceLocation] = useState([]);
+	
 
 	const getDeviceLocation = () => {
 		if (!navigator.geolocation) {
@@ -86,11 +109,29 @@ export default function Map({ center, markerInfo, routeCoords=[], riskZones=[], 
 		return getDeviceLocation();
 	}, []);
 
+	useEffect(() => {
+		setGeoLocation(deviceLocation);
+	}, [deviceLocation])
+
 	const lightModeUrl = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
 	const darkModeUrl = "https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png"; 
 
+	function MapEvents() {
+		const map = useMapEvents({
+			contextmenu: (e) => {
+				const {lat, lng} = e.latlng;
+				setMapFocusPoint([lat, lng])
+				//alert(`You right-clicked the map at: \nLatitude: ${lat} \nLongitude: ${lng}`);
+			}
+		})
+		return null;
+	}
+
 	return (
-		<main className={styles.mapContainer}>
+		<main 
+			className={styles.mapContainer} 
+		>
+			<div id='mapData' data-heatmap-active={heatData.length > 0 ? 'true' : 'false'}/>
 			<MapContainer center={center} zoom={13} className={clsx(styles.map)}>
 				<TileLayer
 					attribution={isDarkMode ? 
@@ -110,6 +151,12 @@ export default function Map({ center, markerInfo, routeCoords=[], riskZones=[], 
 				{deviceLocation.length == 2 && 
 					<Marker position={deviceLocation} icon={blueDotIcon}>
 						<Popup>You are here</Popup>
+					</Marker>
+				}
+
+				{mapFocusPoint.length == 2 && 
+					<Marker position={mapFocusPoint} icon={redMarkerIcon}>
+						<Popup>{`${mapFocusPoint[0]}, ${mapFocusPoint[1]}`}</Popup>
 					</Marker>
 				}
 
@@ -188,6 +235,7 @@ export default function Map({ center, markerInfo, routeCoords=[], riskZones=[], 
 
 				<RecenterPlugin lat={center[0]} lng={center[1]}/>
 				<HeatmapPlugin points={heatData}/>
+				<MapEvents/>
 			</MapContainer>
 		</main>
 	);

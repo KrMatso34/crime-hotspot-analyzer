@@ -6,6 +6,7 @@ import QuickRouteSelectPanel from './components/QuickRouteSelectPanel/QuickRoute
 import RouteSelectorPanel from './components/RouteSelectorPanel/RouteSelectorPanel';
 import StartNavigationPanel from './components/StartNavigationPanel/StartNavigationPanel';
 import { CrimeLegend } from './components/CrimeLegend/CrimeLegend'
+import { NotificationCard } from './components/Notifications/NotificationCard'
 
 import styles from './Dashboard.module.css';
 import clsx from 'clsx';
@@ -26,6 +27,8 @@ export default function Dashboard() {
 	const [riskZones, setRiskZones] = useState(riskZonesData.features.map(f => ({...f, active: true})));
 	const [streetlightData, setStreetlightData] = useState([[47.693182, -122.098657], [47.692854, -122.104909], [47.692954, -122.115051], [47.693142, -122.125091], [47.697406, -122.128552]])
 	const [streetlightOverride, setStreetlightOverride] = useState(false);
+	const [geolocation, setGeoLocation] = useState([]);
+	const [mapFocusPoint, setMapFocusPoint] = useState([]);
 
 	useEffect(() => {
 		fetchHeatData();
@@ -117,14 +120,17 @@ export default function Dashboard() {
 	}
 
 
-	return (
-		<div className={clsx(styles.dashboard)}>
+
+	return (<>
+		<NotificationCard/>
+		<div className={clsx(styles.dashboard)} id="dashboard" data-heatmap-loaded={heatMapRaw.length > 0 ? "true" : "false"}>
 			<Header/>
 			<div className={clsx(styles.content)}>
 				<RouteSelectorPanel 
 					setCamCoords={(coords, info) => {setCamCoords(coords); setMarkerInfo(info)}}
 					route={route} setRoute={setRoute}
 					routeInstructions={route.length > 0 ? route[selectedRouteIndex].instructions : []}
+					selectedRouteIndex={selectedRouteIndex}
 					heatMap={heatMap}
 					riskZones={riskZones}
 					setStreetlightData={setStreetlightData}
@@ -136,6 +142,8 @@ export default function Dashboard() {
 					toggleRiskZone={toggleRiskZone}
 					streetlightOverride={streetlightOverride}
 					setStreetlightOverride={setStreetlightOverride}
+					geolocation={geolocation}
+					mapFocusPoint={mapFocusPoint}
 				/>
 				
 				<Map 
@@ -146,6 +154,9 @@ export default function Dashboard() {
 					selectedRouteIndex={selectedRouteIndex}
 					riskZones={riskZones.filter((zone) => zone.active)}
 					streetlightData={streetlightOverride ? streetlightData : []}
+					setGeoLocation={setGeoLocation}
+					setMapFocusPoint={setMapFocusPoint}
+					mapFocusPoint={mapFocusPoint}
 				/>
 				<QuickRouteSelectPanel
 					routesInfo={route}
@@ -159,5 +170,5 @@ export default function Dashboard() {
 				/>
 			</div>
 		</div>
-	)
+	</>)
 }

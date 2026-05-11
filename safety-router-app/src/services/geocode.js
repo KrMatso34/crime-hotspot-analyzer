@@ -68,7 +68,7 @@ function pointToSegmentDistance(p, a, b) {
 		};
 	};
 
-	const refLat = (a[0] + b[1]) / 2;
+	const refLat = (a[0] + b[0]) / 2;
 
 	const P = toXY(p, refLat);
 	const A = toXY(a, refLat);
@@ -95,21 +95,39 @@ function pointToSegmentDistance(p, a, b) {
 }
 
 
-export function scoreRoute(routePoints, incidents) {
-	const 
-		spread = 200,	// Radius of influence in meters
-						//   * 120 -> about 1 block
-						//   * 200 -> neighborhood level
-						//   * 400 -> broader avoidance
-		severity = 50.0	// Global multiplier
-	;
+// Crime type weights — matches severity levels already in data.controller.js
+const CRIME_TYPE_WEIGHT = {
+	VIOLENT_CRIME:  3.0,
+	PROPERTY_CRIME: 1.5,
+	DEFAULT:        1.0,
+};
 
-	if (routePoints.length < 0) return 0;
+function getCrimeWeight(incident) {
+	return 1;
+	const eventType = incident[3]; // 'VIOLENT_CRIME' | 'PROPERTY_CRIME' | etc
+	return CRIME_TYPE_WEIGHT[eventType] ?? CRIME_TYPE_WEIGHT.DEFAULT;
+}
+
+/**
+ * scoreRoute
+ * @param {Array} routePoints  [[lat, lon], [lat, lon], ...]
+ * @param {Array} incidents    [[lat, lon, severity, eventType, timestamp], ...]
+ * @returns {number}           0 (safe) → 100 (high risk)
+ */
+export function scoreRoute(routePoints, incidents) {
+	const spread = 200; // radius of influence in meters
+						// 120 → ~1 block · 200 → neighborhood · 400 → broader
+
+	// fixed: was `< 0` which never triggered
+	if (!routePoints || routePoints.length < 2) return 0;
+	if (!incidents   || incidents.length === 0)  return 0;
+
 
 	let totalLength = 0;
 	for (let i = 0; i < routePoints.length - 1; i++) {
-		totalLength += haversineDistance(routePoints[i], routePoints[i + 1]);
+		totalLength += haversineDistance(routePoints[i], routePoints[i+1]);
 	}
+	if (totalLength === 0) return 0;
 
 
 	let totalRisk = 0;
@@ -117,29 +135,26 @@ export function scoreRoute(routePoints, incidents) {
 	for (const incident of incidents) {
 		let minDistance = Infinity;
 
-		// Find route closest segment
 		for (let i = 0; i < routePoints.length - 1; i++) {
 			const dist = pointToSegmentDistance(
-				incident,
+				[incident[0], incident[1]],
 				routePoints[i],
-				routePoints[i + 1]
+				routePoints[i+1]
 			);
 			minDistance = Math.min(minDistance, dist);
 		}
 
-		// Gaussian decay
-		const riskContribution = severity * Math.exp(-(minDistance ** 2) / (2 * spread ** 2));
-
-		totalRisk += riskContribution;
+		// Gaussian decay × crime type weight
+		const decay       = Math.exp(-(minDistance ** 2) / (2 * spread ** 2));
+		const crimeWeight = getCrimeWeight(incident);
+		totalRisk += decay * crimeWeight;
 	}
 
-	// Normalize by route length 
-	let score = totalRisk / totalLength;
-
-	// Truncate value
-	score = Math.floor(score * 1000);
-
-	return score;
+	// Normalize by route length, scale to 0–100, clamp
+	// adjust SCALE_FACTOR if scores feel too bunched or too aggressive
+	const SCALE_FACTOR = 15000;
+	const scaled = (totalRisk / totalLength) * SCALE_FACTOR;
+	return Math.min(100, Math.max(0, Math.round(scaled)));
 }
 
 /*
