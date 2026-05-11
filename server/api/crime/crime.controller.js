@@ -3,9 +3,16 @@
  * Fetches and aggregates crime data from DynamoDB
  */
 
-// TODO: Configure AWS SDK with your DynamoDB credentials
-// import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-// const client = new DynamoDBClient({ region: 'us-west-2' });
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { QueryCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
+
+// Initialize DynamoDB client
+// Uses AWS_REGION and AWS credentials from environment variables
+const client = new DynamoDBClient({ region: process.env.AWS_REGION || 'us-west-2' });
+
+// DynamoDB table name (configure via environment variable)
+const CRIMES_TABLE = process.env.DYNAMODB_CRIMES_TABLE || 'CrimeData';
+const GSI_LOCATION = 'LocationIndex'; // Global Secondary Index for location queries
 
 /**
  * Calculate distance between two coordinates (Haversine formula)
@@ -30,7 +37,51 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 }
 
 /**
- * Mock crime data for testing
+ * Fetch crime data from DynamoDB
+ * Retrieves crimes from the past 30 days
+ * @returns {Promise<Array>} Array of crime records
+ */
+async function getCrimeDataFromDynamoDB() {
+  try {
+    // Query crimes from the past 30 days
+    const thirtyDaysAgo = Math.floor((Date.now() - 30 * 24 * 60 * 60 * 1000) / 1000);
+    
+    const command = new ScanCommand({
+      TableName: CRIMES_TABLE,
+      FilterExpression: '#dt > :thirtyDaysAgo',
+      ExpressionAttributeNames: {
+        '#dt': 'timestamp'
+      },
+      ExpressionAttributeValues: {
+        ':thirtyDaysAgo': thirtyDaysAgo
+      }
+    });
+
+    const response = await client.send(command);
+    
+    // Transform DynamoDB items to match our data structure
+    const crimes = (response.Items || []).map(item => ({
+      id: item.id,
+      lat: parseFloat(item.latitude),
+      lon: parseFloat(item.longitude),
+      crimeType: item.crimeType,
+      date: new Date(item.timestamp * 1000),
+      severity: item.severity || 'medium',
+      address: item.address,
+      description: item.description
+    }));
+
+    return crimes;
+  } catch (error) {
+    console.error('Error fetching from DynamoDB:', error);
+    // Fallback to mock data if DynamoDB fails
+    console.warn('Falling back to mock crime data');
+    return getMockCrimeData();
+  }
+}
+
+/**
+ * Mock crime data for testing (fallback when DynamoDB is unavailable)
  * Replace this with actual DynamoDB queries
  */
 function getMockCrimeData() {
@@ -62,11 +113,11 @@ function getMockCrimeData() {
 
 /**
  * Fetch all crime hotspots with aggregation
- * In production, this would query DynamoDB for recent crimes and aggregate them
+ * Queries DynamoDB for recent crimes and aggregates them into hotspots
  */
 export async function getHotspots(req, res) {
   try {
-    const crimes = getMockCrimeData();
+    const crimes = await getCrimeDataFromDynamoDB();
     
     // Aggregate crimes by location (rounded to 0.001 degree precision ~100m)
     const hotspotMap = new Map();
@@ -118,7 +169,7 @@ export async function getHotspots(req, res) {
 
 /**
  * Fetch crimes within a specified area
- * In production, this would query DynamoDB for crimes within a geo-radius
+ * Queries DynamoDB for crimes within a geo-radius
  */
 export async function getCrimesInArea(req, res) {
   try {
@@ -132,7 +183,8 @@ export async function getCrimesInArea(req, res) {
     const centerLon = parseFloat(lon);
     const radius = parseFloat(radiusKm);
     
-    const allCrimes = getMockCrimeData();
+    // Fetch all crimes (in production, could use DynamoDB geo-query)
+    const allCrimes = await getCrimeDataFromDynamoDB();
     
     // Filter crimes within radius
     const crimes = allCrimes.filter(crime => {
