@@ -7,7 +7,7 @@ export default function Logo() {
 	
 	return (
 		<span className={clsx(styles.logo)}>
-			KAGS
+			KAGS - Crime Hotspot Analyzer & Safety Router    
 		</span>
 	)
 }

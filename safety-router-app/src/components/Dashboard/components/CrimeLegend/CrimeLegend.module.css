@@ -26,3 +26,9 @@
 	border: 1px solid var(--text-primary);
 	margin-right: 10px;
 }
+
+@media (max-width: 800px) {
+	.crimeLegend {
+		display: none;
+	}
+}

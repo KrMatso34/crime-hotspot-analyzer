@@ -7,7 +7,9 @@ import L from 'leaflet';
 import RecenterPlugin from './components/RecenterPlugin/RecenterPlugin';
 import HeatmapPlugin from './components/HeatmapPlugin/HeatmapPlugin';
 
-import { scoreRoute } from '@services/geocode';
+import { useTheme } from '../ThemeProvider/ThemeProvider';
+
+import { useRiskHeatmapData } from '../../Dashboard';
 
 import styles from './Map.module.css';
 import clsx from 'clsx';
@@ -45,36 +47,47 @@ export default function Map({
 	routeCoords=[], 
 	riskZones=[], 
 	streetlightData=[], 
-	heatData, 
 	selectedRouteIndex,
 	setGeoLocation,
 	setMapFocusPoint,
 	mapFocusPoint,
 }) {
-	const [isDarkMode, setIsDarkMode] = useState(true);
 	const [routeScore, setRouteScore] = useState(0);
 	const [routeBoxPosition, setRouteBoxPosition] = useState([]);
 	const [deviceLocation, setDeviceLocation] = useState([]);
-	
 
-	const getDeviceLocation = () => {
-		if (!navigator.geolocation) {
+	const heatmapData = useRiskHeatmapData();
+	const heatData = heatmapData.heatMap.map(point => [point[0], point[1], point[2]])
+
+	const {theme} = useTheme();
+	const isDarkMode = theme != 'light';
+
+	useEffect(() => {
+		if (!navigator || !navigator.geolocation) {
 			console.log("Geolocation is not supported by your browser.");
 			return;
 		}
 
 		const watchId = navigator.geolocation.watchPosition(
-		(pos) => {
-			const { latitude, longitude } = pos.coords;
-			setDeviceLocation([latitude, longitude]);
-		},
-			(err) => {handleLocationError(err)},
-			{ enableHighAccuracy: true }
+			(pos) => {
+				const { latitude, longitude } = pos.coords;
+				setDeviceLocation([latitude, longitude]);
+			},
+			(err) => {
+				handleLocationError(err);
+			},
+			{ 
+				enableHighAccuracy: true, 
+				timeout: 10000,      // Max 10 seconds to wait before falling back/erroring
+				maximumAge: 30000    // Accept a cached location up to 30 seconds old
+			}
 		);
 
-		return () => navigator.geolocation.clearWatch(watchId);
-	};
-
+		return () => {
+			navigator.geolocation.clearWatch(watchId);
+		};
+	}, []); 
+	
 	const handleLocationError = (error) => {
 		switch (error.code) {
 			case error.PERMISSION_DENIED:
@@ -103,11 +116,7 @@ export default function Map({
 		}
 	}
 
-	const toggleDarkMode = () => setIsDarkMode(!isDarkMode);
-
-	useEffect(() => {
-		return getDeviceLocation();
-	}, []);
+	
 
 	useEffect(() => {
 		setGeoLocation(deviceLocation);
@@ -118,7 +127,8 @@ export default function Map({
 
 	function MapEvents() {
 		const map = useMapEvents({
-			contextmenu: (e) => {
+			// contextmenu
+			click: (e) => {
 				const {lat, lng} = e.latlng;
 				setMapFocusPoint([lat, lng])
 				//alert(`You right-clicked the map at: \nLatitude: ${lat} \nLongitude: ${lng}`);
@@ -141,12 +151,14 @@ export default function Map({
 					url={isDarkMode ? darkModeUrl : lightModeUrl}
 				/>
 
+				{
 				<Marker position={center}>
 					<Popup>
 						<h3>{markerInfo.name ?? ''}</h3>
 						<p>{markerInfo.display_name ?? ''}</p>
 					</Popup>
 				</Marker>
+				}
 
 				{deviceLocation.length == 2 && 
 					<Marker position={deviceLocation} icon={blueDotIcon}>
@@ -175,8 +187,19 @@ export default function Map({
 
 				{
 					
-					riskZones.map(zone => (
-						<Polygon positions={zone.geometry.coordinates[0].map(coord => ([coord[1], coord[0]]))} pathOptions={{color: 'red', fillColor: 'red'}}/>
+					riskZones.map((zone, i) => (
+						<Polygon 
+							key={i}
+							positions={zone.geometry.coordinates[0].map(coord => ([coord[1], coord[0]]))} 
+							pathOptions={{color: 'red', fillColor: 'red'}}
+						>
+							<Popup>
+								<h3>{zone.properties.name}</h3>
+								<p>{zone.properties.notes}</p>
+								<p><strong>Risk level</strong>: {zone.properties.riskLevel}</p>
+								<p><strong>Primary crime types</strong>: {zone.properties.primaryCrimeTypes.map(t => t.replaceAll('_', ' ')).join(', ')}</p>
+							</Popup>
+						</Polygon>
 					))
 				}
 

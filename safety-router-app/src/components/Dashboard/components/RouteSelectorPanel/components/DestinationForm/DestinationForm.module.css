@@ -1,4 +1,9 @@
 
+.link:hover {
+	cursor: pointer;
+	text-decoration: underline;
+}
+
 .destinationForm {
 	padding-bottom: 30px;
 }

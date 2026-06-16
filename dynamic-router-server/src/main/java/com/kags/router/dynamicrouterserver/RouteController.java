@@ -15,7 +15,7 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/route")
-@CrossOrigin(origins = "http://localhost:5173") // allow access from frontend
+@CrossOrigin(origins = {"http://localhost:5173", "https://staging.d2nnoacaofd8et.amplifyapp.com"}) // allow access from frontend
 public class RouteController {
 
     private final GraphHopper hopper;

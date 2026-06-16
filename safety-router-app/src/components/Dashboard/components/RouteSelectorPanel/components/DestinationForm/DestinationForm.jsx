@@ -1,12 +1,13 @@
-import React, { useEffect, useState, createContext } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 
 import { geocodeAddress, fetchRoute } from '@services/geocode'
 
-import AddressInput from './components/AddressInput/AddressInput';
+import { AccessOverridesContext, useRiskHeatmapData } from '../../../../Dashboard'
+
+import { AddressListInput } from './components/AdressListInput/AddressListInput';
 
 import styles from './DestinationForm.module.css';
 import clsx from 'clsx';
-import { LocateFixed, Map } from 'lucide-react'
 
 import { scoreRoute } from '@services/geocode';
 
@@ -26,38 +27,24 @@ export default function DestinationForm({
 	geolocation,
 	mapFocusPoint,
 }) {
-	const [origin, setOrigin] = useState('');
-	const [destination, setDestination] = useState('');
-	const [stops, setStops] = useState(['']);
+
+	const [errorMsg, setErrorMsg] = useState('');
 	const [isLoading, setIsLoading] = useState(false);
-	const [addressInputFocus, setAddressInputFocus] = useState('');
 	const [retriggerSavedIndex, setRetriggerSavedIndex] = useState(0);
+
+	const [newStops, setNewStops] = useState([{id: 'item-1', content: ''}, {id: 'item-2', content: ''}]);
+	const origin = newStops[0].content;
+	const destination = newStops[newStops.length-1].content;
+	const stops = newStops.map(s => s.content).slice(1,newStops.length-1);
+
+	const {setStreetlightAccess, streetlightAccess, rerouteTriggerAccess, setRerouteTriggerAccess} = useContext(AccessOverridesContext)
+	const { forecastActive, setForecastReport, scheduledDate } = useRiskHeatmapData();
 
 	const routeTypeIndex = {
 		safest: 0,
 		balanced: 1,
 		fastest: 2,
 	}
-
-	const addStop = () => {
-		if (stops.length >= 5) {
-			alert('Maximum 5 stops allowed');
-			return;
-		}
-		setStops([...stops, '']);
-	};
-
-	const removeStop = (index) => {
-		if (stops.length <= 1) return; 
-		const newStops = stops.filter((_, i) => i !== index);
-		setStops(newStops);
-	};
-
-	const updateStop = (index, value) => {
-		const newStops = [...stops];
-		newStops[index] = value;
-		setStops(newStops);
-	};
 
 	const flyToAddress = async (address) => {
 		try {
@@ -186,6 +173,9 @@ export default function DestinationForm({
 	}
 
 	const submitRoute = async (start=origin, end=destination) => {
+
+		if (await checkSubmitErrors()) return;
+		setErrorMsg('');
 		
 		setIsLoading(true);
 		clearRoutes();
@@ -222,8 +212,12 @@ export default function DestinationForm({
 					setRouteError('fastest')
 					throw err;
 				})
+			
+			
 
 			flyToAddress(start);
+
+			if (forecastActive) makeForecastReport(originCoords.lat, originCoords.lon, scheduledDate, heatMap)
 		} catch (err) {
 			console.error(err);
 			alert('Could not calculate route');
@@ -231,7 +225,44 @@ export default function DestinationForm({
 		}
 	}
 
+	const makeForecastReport = async (targetLat, targetLon, travelTime, crimes) => {
+		const API_URL = 'http://localhost:4000/api/prediction/safetyReport'; 
+
+		// Construct the request payload
+		const payload = {
+			targetLat: parseFloat(targetLat),
+			targetLon: parseFloat(targetLon),
+			travelTime: travelTime,
+			crimes: crimes 
+		};
+
+		try {
+			const response = await fetch(API_URL, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify(payload)
+			});
+
+			if (!response.ok) {
+				throw new Error(`HTTP error! Status: ${response.status}`);
+			}
+
+			const data = await response.json();
+			
+			// Expected output shape: { safetyConfidence: "85%", tier: "Safe", totalHistoricalIncidentsNearby: 14 }
+			setForecastReport(data)
+			
+			return data;
+		} catch (error) {
+			console.error('Failed to fetch safety prediction from API:', error);
+			return null;
+		}
+	}
+
 	const checkRouteRetrigger = () => {
+		if (!rerouteTriggerAccess) return;
 		if (route.length != 3 || !destination || geolocation.length != 2) return;
 		if (route[0].status != "success" || route[1].status != "success" || route[2].status != "success") return;
 
@@ -253,6 +284,7 @@ export default function DestinationForm({
 		return () => clearInterval(intervalId)
 	})
 
+	/* DEPRICATED
 	function InsertLocationButton({ setValue, focusName='' }) {
 		if (addressInputFocus != focusName) return;
 
@@ -277,10 +309,51 @@ export default function DestinationForm({
 			</div>
 		)
 	}
+	*/
+
+	function isInBounds({lat, lon}) {
+		const latNumb = Number(lat);
+		const lonNumb = Number(lon);
+		return latNumb > 45.5343205 && latNumb < 60.777027 && lonNumb > -148.6745055 && lonNumb < -116.867263;
+	}
+
+	async function checkSubmitErrors() {
+		let errorMsg = '';
+		for (const stop of newStops) {
+			if (stop.content.length == 0) {
+				errorMsg = 'Error: Address field(s) cannot be empty.';
+				break;
+			}
+		}
+		if (errorMsg == '') {
+			for (const stop of newStops) {
+				const coords = await geocodeAddress(stop.content);
+				if (!coords || !isInBounds(coords)) {
+					errorMsg = 'Error: Invalid coordinates; Ensure address is inside Washington State.';
+					break;
+				}
+			}
+		}
+
+		if (errorMsg != '') {
+			setErrorMsg(errorMsg);
+			return true;
+		}
+		return false;
+	}
 
 	return (
 		<div className={clsx(styles.destinationForm)}>
-			<p>Seattle and Bellevue Area</p>
+			<p className={clsx(styles.link)} onClick={() => flyToAddress('Bellevue, Washington')}>Seattle and Bellevue Area</p>
+			
+			<AddressListInput
+				items={newStops}
+				setItems={setNewStops}
+				geolocation={geolocation}
+				mapFocusPoint={mapFocusPoint}
+			/>
+			
+			{/*} DEPRICATED
 			<div>
 				<AddressInput 
 					placeholder='Enter starting point...'
@@ -338,6 +411,7 @@ export default function DestinationForm({
 					+ Add another stop
 				</button>
 			</div>
+			{*/}
 
 			<button
 				onClick={() => submitRoute()}
@@ -346,6 +420,7 @@ export default function DestinationForm({
 			>
 				{isLoading ? 'Calculating...' : 'Get Safe Directions'}
 			</button>
+			<p style={{color: 'red'}}>{errorMsg}</p>
 		</div>
 	)
 }

@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 
 import styles from './FilterForm.module.css';
 import clsx from 'clsx';
+
+import { AccessOverridesContext } from '../../../../Dashboard'
+import { InfoButton } from '../../../InfoButton/InfoButton';
 
 function RouteComparisonButton({ name, time, dist, risk }) {
 	return (
@@ -34,11 +37,11 @@ export default function FilterForm({
 	heatMapFilters=[], 
 	riskZones, 
 	toggleRiskZone,
-	streetlightOverride,
-	setStreetlightOverride,
 }) {
 
 	const [curPageKey, setCurPageKey] = useState('time');
+
+	const {setStreetlightAccess, streetlightAccess, rerouteTriggerAccess, setRerouteTriggerAccess} = useContext(AccessOverridesContext)
 
 	const toggleIncidentType = (index) => {
 		setFilterIgnoreTag(index);
@@ -78,7 +81,7 @@ export default function FilterForm({
 				<TabButton pageKey='time'>Time Period</TabButton>
 				<TabButton pageKey='type'>Incident Type</TabButton>
 				<TabButton pageKey='zone'>Risk Zones</TabButton>
-				<TabButton pageKey='light'>Street Lights</TabButton>
+				<TabButton pageKey='light'>Other</TabButton>
 			</div>
 			
 
@@ -87,14 +90,18 @@ export default function FilterForm({
 			>
 				{
 					curPageKey == 'time' && <div>
-						<p> * How recent should the incident be in order to be relevant to your route?</p>
+						<div className={clsx(styles.filterTitle)}>
+							<h3>Time Period</h3>
+							<InfoButton direction="right">The <strong>Time Period</strong> filter effects the risk heatmap data. The filter determines how recent a crime can be in order to be displayed on the map and considered when building your route. For example, selecting "7 days" means only week-old incident data will be considered. </InfoButton>
+						</div>
+						<br/>
 						{timePeriodChoices.map((period) => (
 							<button 
 								key={period}
 								className={clsx(heatMapFilters.timePeriod == period ? styles.selectedTimePeriodButton : '')}
 								onClick={() => setFilterTimePeriod(period)}
 							>
-								{period}d
+								{period} days
 							</button>
 						))}
 					</div>
@@ -102,7 +109,10 @@ export default function FilterForm({
 
 				{
 					curPageKey == 'type' && <div>
-						<p> * What types of incidents are relevant to your route?</p>
+						<div className={clsx(styles.filterTitle)}>
+							<h3>Incident Type</h3>
+							<InfoButton direction="right">The <strong>Incident Type</strong> filter effects the risk heatmap data. This filter determines what types of crimes should be displayed and considered on the map when building your route. Often, all types are crimes are relevant to contributing to risky areas. In this case, simply press the "All" button to fully activate the heatmap. However, if you consider certain non-severe crimes perhaps like vandalism to not be relevant, feel free to click the associated button to toggle it off.</InfoButton>
+						</div>
 						<div>
 							<button onClick={() => toggleAllIncidentTypes(true)}>All</button>
 							<button onClick={() => toggleAllIncidentTypes(false)}>None</button>
@@ -129,7 +139,10 @@ export default function FilterForm({
 
 				{
 					curPageKey == 'zone' && <div>
-						<p> * Which historically risky areas are relevant to your route?</p>
+						<div className={clsx(styles.filterTitle)}>
+							<h3>Risk Zones</h3>
+							<InfoButton direction="right">The <strong>Risk Zones</strong> filter effects the various red polygons across the map. Each region is a historically risky area and are to be avoided when creating routes when ensuring safety. The regions listed below also have a small description of their historical relevance. However, strictly avoiding such areas may not always be convenient in your route, so feel free to disable them by clicking the toggle buttons associated with each region.</InfoButton>
+						</div>
 						{riskZones.map((zone, i) => (
 							<div className={styles.riskZoneContainer}>
 								<button 
@@ -146,12 +159,15 @@ export default function FilterForm({
 				}
 
 				{
-					// TODO: add functionality ###########################################################################################
 					curPageKey == 'light' && <div>
-						<p> * Are street lights relevant to your route?</p>
-						<input type="checkbox"/> Automatically turn on between 7:00pm and 8:00am
+						<div className={clsx(styles.filterTitle)}>
+							<h3>Other</h3>
+							<InfoButton direction="right">The miscellaneous filters include manual overwrites to trigger functions regardless of default conditionals. Streetlights are usually only considered if your route is created during dark hours, but checking the "activate streetlight times" checkbox will always consider streetlights when building your route. The "activate rerouting trigger" will allow the app to automatically retrigger a route creation if your device's location strays too far off from your route, say, if you make a wrong turn or miss an exit.</InfoButton>
+						</div>
+						<input type="checkbox" checked={streetlightAccess} onChange={(ev) => setStreetlightAccess(ev.target.checked)}/> Activate streetlight times
 						<br/>
-						<input type="checkbox" checked={streetlightOverride} onChange={(ev) => setStreetlightOverride(ev.target.checked)}/> Manually override
+						<br/>
+						<input type="checkbox" checked={rerouteTriggerAccess} onChange={(ev) => setRerouteTriggerAccess(ev.target.checked)}/> Activate rerouting trigger
 					</div>
 				}
 			</div>

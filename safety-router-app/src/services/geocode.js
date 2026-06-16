@@ -6,6 +6,7 @@ function getCache(key) {
 }
 
 function setCache(key, value) {
+	if (value == undefined) return;
 	sessionStorage.setItem("geocode:" + key, JSON.stringify(value));
 }
 

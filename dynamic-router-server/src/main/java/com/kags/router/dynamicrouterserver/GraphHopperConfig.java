@@ -5,7 +5,7 @@ import com.graphhopper.config.Profile;
 import com.graphhopper.util.CustomModel;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import java.util.Map;
+
 import static com.graphhopper.json.Statement.If;
 import static com.graphhopper.json.Statement.Op.LIMIT;
 import static com.graphhopper.json.Statement.Op.MULTIPLY;
@@ -20,7 +20,7 @@ public class GraphHopperConfig {
 
         GraphHopper hopper = new GraphHopper();
 
-        hopper.setOSMFile("washington-260228.osm.pbf");
+        hopper.setOSMFile("src/washington-260228.osm.pbf");
         hopper.setGraphHopperLocation("graph-cache");
 
         // Which data layers to extract from OSM

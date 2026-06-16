@@ -1,4 +1,5 @@
 import { scanTable } from '../util/dynamo.js';
+import { getCache, setCache } from '../util/cache.js';
 
 function getSeverity(eventType) {
 	if (eventType === 'VIOLENT_CRIME') {
@@ -11,17 +12,26 @@ function getSeverity(eventType) {
 }
 
 export async function loadData(req, res) {
-	const data = await scanTable('CrimeEvents');
-	//console.log(data[0]);
+	const cached = getCache('crime_events');
+	if (cached) {
+		return res.json(cached);
+	}
+
+
+	const dataRaw = await scanTable('CrimeEvents');
+	const data = dataRaw.map(entry => (
+		[
+			entry.location.lat, 
+			entry.location.lon, 
+			getSeverity(entry.event_type), 
+			entry.event_type,
+			entry.occurred_at
+		]
+	));
+
+	setCache('crime_events', '', data);
+	
 	res.json(
-		data.map(entry => (
-			[
-				entry.location.lat, 
-				entry.location.lon, 
-				getSeverity(entry.event_type), 
-				entry.event_type,
-				entry.occurred_at
-			]
-		))
+		data
 	);
 }

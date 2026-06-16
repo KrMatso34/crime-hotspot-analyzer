@@ -9,20 +9,21 @@ import styles from './RouteSelectorPanel.module.css';
 import clsx from 'clsx';
 import './formStyles.css';
 import { TransportationSelector } from './components/TransportationSelector/TransportationSelector';
+import { useRiskHeatmapData } from '../../Dashboard';
 
 export default function RouteSelectorPanel({ 
 	setCamCoords, 
 	route,
 	setRoute, 
 	selectedRouteIndex,
-	heatMap, 
+	//heatMap, 
 	riskZones,
 	setStreetlightData,
 	routeInstructions=[], 
 	finishRoute, 
-	heatMapFilters,
-	setFilterTimePeriod,
-	setFilterIgnoreTag,
+	//heatMapFilters,
+	//setFilterTimePeriod,
+	//setFilterIgnoreTag,
 	toggleRiskZone,
 	streetlightOverride,
 	setStreetlightOverride,
@@ -30,6 +31,8 @@ export default function RouteSelectorPanel({
 	mapFocusPoint,
 }) {
 	const [transportationMethod, setTransportationMethod] = useState('car');
+
+	const { heatMap, heatMapFilters, setFilterTimePeriod, setFilterIgnoreTag } = useRiskHeatmapData();
 
 	return (
 		<div className={clsx(styles.routeSelectorPanel)}>

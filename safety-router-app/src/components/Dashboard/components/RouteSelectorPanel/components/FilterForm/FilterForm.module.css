@@ -68,3 +68,12 @@
 	border: 1px solid var(--border-primary);
 	padding: 5px;
 }
+
+.filterTitle {
+	margin-bottom: 10px;
+}
+
+.filterTitle h3 {
+	display: inline;
+	margin-right: 10px;
+}
