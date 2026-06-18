@@ -194,6 +194,8 @@ function prepareHeatMap(heatMapPoints, fromLat, fromLon, toLat, toLon) {
 	return filteredHeatMap;
 }
 
+const ROUTER_API_URL = import.meta.env.VITE_ROUTER_API_URL;
+
 export async function fetchRoute(origin, destination, routePriority='safest', heatMapPoints=[], riskZones=[], streetlightData, vehicle='car') {
 	try {
 		const startRes = await geocodeAddress(origin);
@@ -218,7 +220,7 @@ export async function fetchRoute(origin, destination, routePriority='safest', he
 
 		let route;
 
-		await axios.post('http://localhost:8080/route', params)
+		await axios.post(`${ROUTER_API_URL}/route`, params)
 			.then(res => {
 				route = res.data;
 			})

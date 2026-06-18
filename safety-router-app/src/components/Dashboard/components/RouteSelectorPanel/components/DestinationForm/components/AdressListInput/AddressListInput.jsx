@@ -16,7 +16,7 @@ import {
 } from '@dnd-kit/sortable';
 import { restrictToVerticalAxis, restrictToWindowEdges } from '@dnd-kit/modifiers';
 
-import { AddressAutocompleteDropdown } from './components/AddressAutocompleteDropdown/AddressAutocompleteDropdown';
+import { AddressAutocompleteDropdown } from '../AddressAutocompleteDropdown/AddressAutocompleteDropdown';
 
 import clsx from 'clsx';
 import styles from './AddressListInput.module.css'

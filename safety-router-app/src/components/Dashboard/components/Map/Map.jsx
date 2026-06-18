@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 
 import { MapContainer, TileLayer, Marker, Popup, Polyline, Tooltip, Polygon, SVGOverlay, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -9,7 +9,7 @@ import HeatmapPlugin from './components/HeatmapPlugin/HeatmapPlugin';
 
 import { useTheme } from '../ThemeProvider/ThemeProvider';
 
-import { useRiskHeatmapData } from '../../Dashboard';
+import { useRiskHeatmapData, useSpecialPoints } from '../../Dashboard';
 
 import styles from './Map.module.css';
 import clsx from 'clsx';
@@ -39,6 +39,57 @@ const redMarkerIcon = new L.Icon({
 	shadowSize: [41, 41]
 });
 
+function RiskZonePolygon({ positions, zone }) {
+	const polygonRef = useRef(null);
+
+	return (
+		<Polygon 
+			ref={polygonRef}
+			positions={positions} 
+			pathOptions={{color: 'red', fillColor: 'red'}}
+		>
+		</Polygon>
+	)
+	/*
+return (
+		<Polygon 
+			ref={polygonRef}
+			positions={positions} 
+			pathOptions={{color: 'red', fillColor: 'red'}}
+			eventHandlers={{
+				click: (e) => {
+					L.DomEvent.stopPropagation(e);
+					L.DomEvent.preventDefault(e);
+					e.originalEvent.preventDefault();
+					e.originalEvent.stopPropagation();
+					
+				},
+				contextmenu: (e) => {
+					L.DomEvent.stopPropagation(e);
+					e.originalEvent.preventDefault();
+					if (polygonRef.current) {
+						polygonRef.current.openPopup(e.latlng);
+					}
+				}
+			}}
+			onContextMenu={(e) => {
+				e.preventDefault();
+				e.stopPropagation();
+				if (polygonRef.current) {
+					polygonRef.current.openPopup(e.latlng);
+				}
+			}}
+		>
+			<Popup>
+				<h3>{zone.properties.name}</h3>
+				<p>{zone.properties.notes}</p>
+				<p><strong>Risk level</strong>: {zone.properties.riskLevel}</p>
+				<p><strong>Primary crime types</strong>: {zone.properties.primaryCrimeTypes.map(t => t.replaceAll('_', ' ')).join(', ')}</p>
+			</Popup>
+		</Polygon>
+	)
+	*/
+}
 
 
 export default function Map({ 
@@ -59,8 +110,9 @@ export default function Map({
 	const heatmapData = useRiskHeatmapData();
 	const heatData = heatmapData.heatMap.map(point => [point[0], point[1], point[2]])
 
-	const {theme} = useTheme();
+	const { theme } = useTheme();
 	const isDarkMode = theme != 'light';
+	const { bounds } = useSpecialPoints();
 
 	useEffect(() => {
 		if (!navigator || !navigator.geolocation) {
@@ -131,12 +183,17 @@ export default function Map({
 			click: (e) => {
 				const {lat, lng} = e.latlng;
 				setMapFocusPoint([lat, lng])
+				L.DomEvent.stopPropagation(e);
 				//alert(`You right-clicked the map at: \nLatitude: ${lat} \nLongitude: ${lng}`);
 			}
 		})
 		return null;
 	}
 
+	const boundsGeometry = [[bounds[1], bounds[0]], [bounds[1], bounds[2]], [bounds[3], bounds[2]], [bounds[3], bounds[0]]]
+	
+	const ALLOW_DARK_MAP = import.meta.env.VITE_ALLOW_DARK_MAP;
+	
 	return (
 		<main 
 			className={styles.mapContainer} 
@@ -148,7 +205,8 @@ export default function Map({
 						'&copy; <a href="https://stadiamaps.com" target="_blank">Stadia</a> &copy; <a href="https://openmaptiles.org" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' : 
 						'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 					}
-					url={isDarkMode ? darkModeUrl : lightModeUrl}
+					
+					url={isDarkMode && ALLOW_DARK_MAP ? darkModeUrl : lightModeUrl}
 				/>
 
 				{
@@ -185,23 +243,26 @@ export default function Map({
 					</Tooltip>
 				</Marker> : ''}
 
+
+				{
+					<Polygon
+						positions={boundsGeometry}
+						pathOptions={{color: 'white', fillOpacity: 0}}
+					/>
+				}
+				
 				{
 					
 					riskZones.map((zone, i) => (
-						<Polygon 
+						<RiskZonePolygon 
+							positions={zone.geometry.coordinates[0].map(coord => ([coord[1], coord[0]]))}  
+							zone={zone} 
 							key={i}
-							positions={zone.geometry.coordinates[0].map(coord => ([coord[1], coord[0]]))} 
-							pathOptions={{color: 'red', fillColor: 'red'}}
-						>
-							<Popup>
-								<h3>{zone.properties.name}</h3>
-								<p>{zone.properties.notes}</p>
-								<p><strong>Risk level</strong>: {zone.properties.riskLevel}</p>
-								<p><strong>Primary crime types</strong>: {zone.properties.primaryCrimeTypes.map(t => t.replaceAll('_', ' ')).join(', ')}</p>
-							</Popup>
-						</Polygon>
+						/>
 					))
 				}
+
+				
 
 				{
 					streetlightData.map(lightCoord => (

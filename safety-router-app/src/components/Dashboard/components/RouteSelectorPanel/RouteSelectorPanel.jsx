@@ -36,19 +36,19 @@ export default function RouteSelectorPanel({
 
 	return (
 		<div className={clsx(styles.routeSelectorPanel)}>
-			<DestinationForm 
-				setCamCoords={setCamCoords} 
-				route={route} setRoute={setRoute} selectedRouteIndex={selectedRouteIndex}
-				heatMap={heatMap}
-				riskZones={riskZones}
-				setStreetlightData={setStreetlightData}
-				transportationMethod={transportationMethod}
-				useStreetlights={streetlightOverride}
-				geolocation={geolocation}
-				mapFocusPoint={mapFocusPoint}
-			/>
-
 			<div className={clsx(styles.detailsContainer)}>
+				<DestinationForm 
+					setCamCoords={setCamCoords} 
+					route={route} setRoute={setRoute} selectedRouteIndex={selectedRouteIndex}
+					heatMap={heatMap}
+					riskZones={riskZones}
+					setStreetlightData={setStreetlightData}
+					transportationMethod={transportationMethod}
+					useStreetlights={streetlightOverride}
+					geolocation={geolocation}
+					mapFocusPoint={mapFocusPoint}
+				/>
+
 				{
 					(routeInstructions.length == 0) ? (
 						<>
@@ -65,7 +65,7 @@ export default function RouteSelectorPanel({
 								streetlightOverride={streetlightOverride}
 								setStreetlightOverride={setStreetlightOverride}
 							/>
-							<LiveAlertsDisplay setCamCoords={setCamCoords}/>
+							
 						</>
 					) : (
 						<>

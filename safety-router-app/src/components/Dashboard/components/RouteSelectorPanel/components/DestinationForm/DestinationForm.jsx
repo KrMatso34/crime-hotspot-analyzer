@@ -2,7 +2,7 @@ import React, { useEffect, useState, useContext } from 'react';
 
 import { geocodeAddress, fetchRoute } from '@services/geocode'
 
-import { AccessOverridesContext, useRiskHeatmapData } from '../../../../Dashboard'
+import { AccessOverridesContext, useRiskHeatmapData, useSpecialPoints } from '../../../../Dashboard'
 
 import { AddressListInput } from './components/AdressListInput/AddressListInput';
 
@@ -39,6 +39,7 @@ export default function DestinationForm({
 
 	const {setStreetlightAccess, streetlightAccess, rerouteTriggerAccess, setRerouteTriggerAccess} = useContext(AccessOverridesContext)
 	const { forecastActive, setForecastReport, scheduledDate } = useRiskHeatmapData();
+	const { bounds } = useSpecialPoints();
 
 	const routeTypeIndex = {
 		safest: 0,
@@ -149,6 +150,8 @@ export default function DestinationForm({
 		}
 	}, [route]);
 
+	const BACKEND_API_URL = import.meta.env.VITE_BACKEND_API_URL;
+
 	const loadStreetLights = async (originLat, originLon, destinationLat, destinationLon) => {
 
 		if (!useStreetlights) return [];
@@ -158,7 +161,7 @@ export default function DestinationForm({
 		const maxLat = Math.max(originLat, destinationLat);
 		const maxLon = Math.max(originLon, destinationLon);
 
-		const res = await fetch(`http://localhost:4000/api/lights/${minLat}/${minLon}/${maxLat}/${maxLon}`);
+		const res = await fetch(`${BACKEND_API_URL}/api/lights/${minLat}/${minLon}/${maxLat}/${maxLon}`);
 		const data = await res.json();
 
 		return clusterByGrid(
@@ -226,7 +229,7 @@ export default function DestinationForm({
 	}
 
 	const makeForecastReport = async (targetLat, targetLon, travelTime, crimes) => {
-		const API_URL = 'http://localhost:4000/api/prediction/safetyReport'; 
+		const API_URL = `${BACKEND_API_URL}/api/prediction/safetyReport`; 
 
 		// Construct the request payload
 		const payload = {
@@ -312,9 +315,12 @@ export default function DestinationForm({
 	*/
 
 	function isInBounds({lat, lon}) {
+		// Washington bounds: latNumb > 45.5343205 && latNumb < 60.777027 && lonNumb > -148.6745055 && lonNumb < -116.867263;
 		const latNumb = Number(lat);
 		const lonNumb = Number(lon);
-		return latNumb > 45.5343205 && latNumb < 60.777027 && lonNumb > -148.6745055 && lonNumb < -116.867263;
+
+		// King County boundds
+		return latNumb > bounds[1] && lonNumb > bounds[0] && latNumb < bounds[3] && lonNumb < bounds[2];
 	}
 
 	async function checkSubmitErrors() {
@@ -329,7 +335,7 @@ export default function DestinationForm({
 			for (const stop of newStops) {
 				const coords = await geocodeAddress(stop.content);
 				if (!coords || !isInBounds(coords)) {
-					errorMsg = 'Error: Invalid coordinates; Ensure address is inside Washington State.';
+					errorMsg = 'Error: Invalid coordinates; Ensure address is inside King County.';
 					break;
 				}
 			}

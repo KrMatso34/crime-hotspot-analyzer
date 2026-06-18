@@ -72,9 +72,12 @@ function RiskDataContextProvider({children}) {
 		fetchHeatData();
 	}, []);
 
+	const BACKEND_API_URL = import.meta.env.VITE_BACKEND_API_URL;
+
+	
 	async function fetchHeatData() {
 		try {
-			const res = await fetch("http://localhost:4000/api/data/");
+			const res = await fetch(`${BACKEND_API_URL}/api/data/`);
 			const data = await res.json();
 
 			const tags = {};
@@ -218,6 +221,11 @@ export default function Dashboard() {
 
 
 
+	const specialPoints = {
+		geolocation, mapFocusPoint,
+		bounds: [-122.55, 47.35 ,-121.85 ,47.85]
+	}
+
 	return (<>
 		<NotificationCard/>
 		<div className={clsx(styles.dashboard)} id="dashboard">
@@ -232,41 +240,36 @@ export default function Dashboard() {
 						<ForecastController/>
 					</Header>
 					<div className={clsx(styles.content)}>
-						<SpecialPointsContext.Provider value={{geolocation, mapFocusPoint}}>
+						<SpecialPointsContext.Provider value={specialPoints}>
 							<RouteSelectorPanel 
 								setCamCoords={(coords, info) => {setCamCoords(coords); setMarkerInfo(info)}}
 								route={route} setRoute={setRoute}
 								routeInstructions={route.length > 0 ? route[selectedRouteIndex].instructions : []}
 								selectedRouteIndex={selectedRouteIndex}
-								//heatMap={heatMap} DEPRICATED
 								riskZones={riskZones} 
 								setStreetlightData={setStreetlightData}
 								finishRoute={finishRoute}
 
-								// DEPRICATED
-								//heatMapFilters={heatMapFilters}
-								//setFilterTimePeriod={setFilterTimePeriod}
-								//setFilterIgnoreTag={setFilterIgnoreTag}
 								toggleRiskZone={toggleRiskZone}
 								streetlightOverride={streetlightOverride}
 								setStreetlightOverride={setStreetlightOverride}
 								geolocation={geolocation}
 								mapFocusPoint={mapFocusPoint}
 							/>
-						</SpecialPointsContext.Provider>
 						
-						<Map 
-							center={camCoords} 
-							markerInfo={markerInfo} 
-							routeCoords={route.map(r => ({points: r.points, label: r.label}))}
-							//heatData={heatMap.map(point => [point[0], point[1], point[2]])} DEPRICATED
-							selectedRouteIndex={selectedRouteIndex}
-							riskZones={riskZones.filter((zone) => zone.active)}
-							streetlightData={streetlightOverride ? streetlightData : []}
-							setGeoLocation={setGeoLocation}
-							setMapFocusPoint={setMapFocusPoint}
-							mapFocusPoint={mapFocusPoint}
-						/>
+						
+							<Map 
+								center={camCoords} 
+								markerInfo={markerInfo} 
+								routeCoords={route.map(r => ({points: r.points, label: r.label}))}
+								selectedRouteIndex={selectedRouteIndex}
+								riskZones={riskZones.filter((zone) => zone.active)}
+								streetlightData={streetlightOverride ? streetlightData : []}
+								setGeoLocation={setGeoLocation}
+								setMapFocusPoint={setMapFocusPoint}
+								mapFocusPoint={mapFocusPoint}
+							/>
+						</SpecialPointsContext.Provider>
 						<QuickRouteSelectPanel
 							routesInfo={route}
 							selectedIndex={selectedRouteIndex}

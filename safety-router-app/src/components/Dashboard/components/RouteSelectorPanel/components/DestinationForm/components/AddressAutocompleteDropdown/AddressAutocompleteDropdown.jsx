@@ -148,13 +148,14 @@ export const AddressAutocompleteDropdown = ({
 							{formatAddress(feature.properties)}
 						</li>
 					))}
-					{(suggestions.length == 0 && quickInserts.length > 0) && quickInserts.map(({value, text, icon}) => (
+					{(suggestions.length == 0 && quickInserts.length > 0) && quickInserts.map(({value, text, icon}, index) => (
 						<li
+							key={index}
 							onClick={() => selectItem(value)}
 							className={clsx(styles.suggestionButton)}
 						>
 							{icon}
-							{text}
+							<span>{text}</span>
 						</li>
 					))
 						

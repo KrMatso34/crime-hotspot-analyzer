@@ -42,10 +42,12 @@ export default function LiveAlertsDisplay({setCamCoords}) {
 		//return () => clearInterval(interval);
 	}, []);
 
+	const BACKEND_API_URL = import.meta.env.VITE_BACKEND_API_URL
+
 	async function fetchAlerts() {
 		setLoading(true);
 		try {
-			const res = await fetch("http://localhost:4000/api/spd-alerts");
+			const res = await fetch(`${BACKEND_API_URL}/api/spd-alerts`);
 			const data = await res.json();
 			setLoading(false);
 			setAlerts(data);

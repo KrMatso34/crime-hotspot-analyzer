@@ -18,6 +18,8 @@ function LogInForm({setFormState}) {
 
 	const accountInfo = useAccountInfo();
 
+	const BACKEND_API_URL = import.meta.env.VITE_BACKEND_API_URL;
+
 	const submitLogIn = async (username, password) => {
 		setLoading(true);
 
@@ -27,7 +29,7 @@ function LogInForm({setFormState}) {
 		}
 
 		try {
-			const res = await fetch('http://localhost:4000/api/accounts/login/', {
+			const res = await fetch(`${BACKEND_API_URL}/api/accounts/login/`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
@@ -106,6 +108,8 @@ function SignUpForm({setFormState}) {
 		setErrorMsg('');
 	}, [username, password]);
 
+	const BACKEND_API_URL = import.meta.env.VITE_BACKEND_API_URL;
+
 	const submitSignUp = async (username, password) => {
 		setLoading(true);
 		if (username.length == 0 || password.length == 0) {
@@ -114,7 +118,7 @@ function SignUpForm({setFormState}) {
 		}
 
 		try {
-			const res = await fetch('http://localhost:4000/api/accounts/signup/', {
+			const res = await fetch(`${BACKEND_API_URL}/api/accounts/signup/`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
@@ -186,10 +190,12 @@ function InfoForm({setFormState}) {
 		accountInfo.logOut();
 	}
 
+	const BACKEND_API_URL = import.meta.env.VITE_BACKEND_API_URL;
+
 	const handleUpdateSavedAddresses = async () => {
 		try {
 			console.log(accountInfo);
-			const res = await fetch(`http://localhost:4000/api/accounts/${accountInfo.id}/address`, {
+			const res = await fetch(`${BACKEND_API_URL}/api/accounts/${accountInfo.id}/address`, {
 				method: 'PUT',
 				headers: {
 					'Content-Type': 'application/json',

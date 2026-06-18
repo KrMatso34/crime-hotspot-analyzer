@@ -20,8 +20,18 @@
 	cursor: pointer;
 	border-bottom: 1px solid #eee;
 	color: black;
+	display: flex;
 }
 
 .suggestionButton:hover {
 	background-color: #ddd;
+}
+
+.suggestionButton span {
+	height: 100%;
+}
+
+.suggestionButton svg {
+	height: 100%;
+	margin-right: 7px;
 }

@@ -8,6 +8,12 @@
 	padding-bottom: 30px;
 }
 
+@media (max-width: 800px) {
+	.destinationForm {
+		padding-bottom: 15px;
+	}
+}
+
 .addStopButton {
 	background-color: #4CAF50;
 	color: white;
