@@ -1,0 +1,79 @@
+
+.filterForm {
+	border: 2px solid var(--border-primary);
+	padding: 10px;
+	margin: 10px 0;
+}
+
+.tabContentContainer {
+	padding: 10px;
+}
+
+.tabContentContainer p {
+	color: var(--text-tertiary);
+}
+
+.incidentTypeGrid {
+	display: grid;
+	grid-template-columns: 1fr;
+	padding: 8px;
+}
+
+.longButton {
+	padding: 3px 12px;
+	border: 2px solid var(--border-primary);
+	color: var(--text-secondary);
+	border-radius: 8px;
+	margin-right: 30px;
+	margin-bottom: 8px;
+	display: flex;
+	justify-content: space-between;
+	cursor: pointer;
+	user-select: none;
+}
+
+.longButton.active {
+	font-weight: bold;
+	border-width: 2px;
+	padding: 2px 11px;
+}
+
+.longButton:hover {
+	background-color: var(--border-primary);
+}
+
+.routeComparisonButtonInfo span {
+	margin-left: 8px
+}
+
+.selectedTimePeriodButton {
+	font-weight: bold;
+	background-color: var(--border-primary);
+}
+
+.tabContainer {
+	width: 100%;
+	display: flex;
+}
+
+.tabContainer .tabButton {
+	flex: 1;
+}
+
+.tabContainer .tabButton.active {
+	background-color: var(--border-primary);
+}
+
+.riskZoneContainer {
+	border: 1px solid var(--border-primary);
+	padding: 5px;
+}
+
+.filterTitle {
+	margin-bottom: 10px;
+}
+
+.filterTitle h3 {
+	display: inline;
+	margin-right: 10px;
+}

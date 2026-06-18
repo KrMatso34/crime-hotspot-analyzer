@@ -1,0 +1,67 @@
+
+.liveAlertsDisplay {
+	
+}
+
+.alertCard {
+	border: 2px solid var(--border-primary);
+	color: var(--text-secondary);
+	background-color: var(--bg-secondary);
+	border-radius: 15px;
+	padding: 20px;
+	margin-bottom: 15px;
+}
+
+.alertCard.warning {
+	background-color: #f3ecaa;
+	border-color: #c9ab58;
+}
+
+.alertCard.severe {
+	background-color: #d89191;
+	border-color: #a03c45;
+}
+
+.alertCard.hoverable:hover {
+	background-color: var(--border-primary);
+	cursor: pointer;
+}
+
+.incidentTypeChip {
+	border: 2px solid var(--border-primary);
+	background-color: var(--border-primary);
+	padding: 3px 10px;
+	border-radius: 10px;
+}
+
+.alertHeader {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+}
+
+.alertHeader h2 {
+	display: inline;
+	margin: 0;
+	margin-left: 15px;
+}
+
+.alertHeader svg {
+	height: 100%;
+}
+
+.liveAlertsHeader {
+	display: inline-flex;
+	align-items: center;
+	justify-content: space-between;
+	width: 100%;
+}
+
+.liveAlertsHeader svg {
+	margin-right: 15px;
+	cursor: pointer;
+}
+
+.liveAlertsHeader svg:hover {
+	color: var(--text-secondary);
+}

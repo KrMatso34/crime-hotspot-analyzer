@@ -1,0 +1,27 @@
+
+.header {
+	width: 100%;
+	top: 0;
+	color: var(--text-primary);
+	background-color: var(--bg-primary);
+	border-bottom: 2px solid var(--border-primary);
+	transition: background-color 0.3s, color 0.3s;
+}
+
+.content {
+	padding: 25px;
+	display: flex;
+}
+
+.buttonContainer {
+	margin-left: auto;
+	display: flex;
+	gap: 10px;
+}
+
+@media (max-width: 800px) {
+	.buttonContainer {
+		font-size: 0.8em;
+		float: center;
+	}
+}

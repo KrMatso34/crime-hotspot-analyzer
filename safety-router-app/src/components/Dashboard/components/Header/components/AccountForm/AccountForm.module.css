@@ -1,0 +1,33 @@
+
+.formContainer {
+	padding-left: 5px;
+	padding-bottom: 5px;
+}
+
+.formContainer input {
+	margin-bottom: 5px;
+}
+
+.inlineButton {
+	background-color: inherit;
+	color: var(--text-secondary);
+	font-size: 16px;
+	margin-left: 10px;
+}
+
+.inlineButton:hover {
+	background-color: var(--border-secondary);
+}
+
+.signOutButton {
+	margin-top: 20px;
+}
+
+.switchFormText {
+	margin-top: 20px;
+	text-align: center;
+}
+
+.error {
+	color: var(--error);
+}

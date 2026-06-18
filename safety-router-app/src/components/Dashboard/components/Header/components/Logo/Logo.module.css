@@ -1,0 +1,10 @@
+
+.logo {
+	font-size: 2em;
+}
+
+@media (max-width: 800px) {
+	.logo {
+		font-size: 1.1em;
+	}
+}

@@ -1,0 +1,246 @@
+{
+  "type": "FeatureCollection",
+  "metadata": {
+    "description": "KAGS High-Risk Area Polygons — Seattle, WA",
+    "source": "Derived from FBI UCR 2024, Seattle Police Department crime data, and neighborhood crime rate reporting",
+    "notes": "Polygons are approximate neighborhood boundaries for high-crime areas. Used to apply a crime-zone penalty to route safety scores. Each polygon is a closed ring of [lon, lat] coordinates (GeoJSON standard).",
+    "lastUpdated": "2025-04-22",
+    "author": "Kyle — KAGS Research"
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "belltown",
+        "name": "Belltown",
+        "riskLevel": "high",
+        "crimeIndexAboveNational": 480,
+        "primaryCrimeTypes": ["assault", "robbery", "homicide", "drug_activity"],
+        "notes": "Most dangerous neighborhood in Seattle per 2024 data. 480% above national crime average."
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-122.3488, 47.6175],
+          [-122.3390, 47.6175],
+          [-122.3390, 47.6098],
+          [-122.3488, 47.6098],
+          [-122.3488, 47.6175]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "pioneer_square",
+        "name": "Pioneer Square",
+        "riskLevel": "high",
+        "crimeIndexAboveNational": 400,
+        "primaryCrimeTypes": ["assault", "robbery", "theft", "drug_activity"],
+        "notes": "Historic downtown district with persistent high crime. Identified as top SPD dispatch location."
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-122.3370, 47.6020],
+          [-122.3295, 47.6020],
+          [-122.3295, 47.5975],
+          [-122.3370, 47.5975],
+          [-122.3370, 47.6020]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "slu_downtown_core",
+        "name": "South Lake Union / Downtown Core",
+        "riskLevel": "high",
+        "crimeIndexAboveNational": 350,
+        "primaryCrimeTypes": ["theft", "auto_burglary", "assault"],
+        "notes": "350% above US crime average despite corporate presence. High foot traffic inflates incident counts."
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-122.3440, 47.6250],
+          [-122.3310, 47.6250],
+          [-122.3310, 47.6130],
+          [-122.3440, 47.6130],
+          [-122.3440, 47.6250]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "northgate",
+        "name": "Northgate",
+        "riskLevel": "high",
+        "crimeIndexAboveNational": 414,
+        "primaryCrimeTypes": ["theft", "drug_activity", "assault", "robbery"],
+        "notes": "414% above national crime average. Rampant drug use and high theft rates."
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-122.3310, 47.7070],
+          [-122.3180, 47.7070],
+          [-122.3180, 47.6990],
+          [-122.3310, 47.6990],
+          [-122.3310, 47.7070]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "south_park",
+        "name": "South Park",
+        "riskLevel": "high",
+        "crimeIndexAboveNational": 285,
+        "primaryCrimeTypes": ["theft", "assault", "drug_activity"],
+        "notes": "285% above national average. Located south of Georgetown across the Duwamish River."
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-122.3390, 47.5320],
+          [-122.3230, 47.5320],
+          [-122.3230, 47.5210],
+          [-122.3390, 47.5210],
+          [-122.3390, 47.5320]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "rainier_valley",
+        "name": "Rainier Valley",
+        "riskLevel": "elevated",
+        "crimeIndexAboveNational": 200,
+        "primaryCrimeTypes": ["shootings", "assault", "robbery", "theft"],
+        "notes": "One of the top neighborhoods for shootings per SPD 2021-2024 reports. Includes Brighton/Dunlap area. Rainier Ave S is primary corridor."
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-122.3030, 47.5700],
+          [-122.2750, 47.5700],
+          [-122.2750, 47.5350],
+          [-122.3030, 47.5350],
+          [-122.3030, 47.5700]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "chinatown_international_district",
+        "name": "Chinatown-International District",
+        "riskLevel": "elevated",
+        "crimeIndexAboveNational": 220,
+        "primaryCrimeTypes": ["shootings", "assault", "theft"],
+        "notes": "Identified in SPD reports as one of three neighborhoods with largest increases in shootings."
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-122.3270, 47.5990],
+          [-122.3175, 47.5990],
+          [-122.3175, 47.5940],
+          [-122.3270, 47.5940],
+          [-122.3270, 47.5990]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "lake_city",
+        "name": "Lake City",
+        "riskLevel": "elevated",
+        "crimeIndexAboveNational": 190,
+        "primaryCrimeTypes": ["shootings", "theft", "drug_activity"],
+        "notes": "One of three neighborhoods with largest increases in shootings per SPD annual report."
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-122.3050, 47.7240],
+          [-122.2880, 47.7240],
+          [-122.2880, 47.7130],
+          [-122.3050, 47.7130],
+          [-122.3050, 47.7240]
+        ]]
+      }
+    },
+
+
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "bellevue_downtown",
+        "name": "Downtown Bellevue",
+        "riskLevel": "elevated",
+        "primaryCrimeTypes": ["theft", "auto_burglary", "robbery"],
+        "notes": "~1,701 incidents/yr in NW quadrant. Highest density in Bellevue. CrimeGrade 2024."
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-122.2050, 47.6175],
+          [-122.1920, 47.6175],
+          [-122.1920, 47.6090],
+          [-122.2050, 47.6090],
+          [-122.2050, 47.6175]
+        ]]
+      }
+    },
+
+
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "bellevue_crossroads",
+        "name": "Crossroads",
+        "riskLevel": "elevated",
+        "primaryCrimeTypes": ["theft", "assault", "auto_burglary"],
+        "notes": "5.69 violent crimes per 1k residents. C- grade. CrimeGrade 2024."
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-122.1540, 47.6210],
+          [-122.1380, 47.6210],
+          [-122.1380, 47.6100],
+          [-122.1540, 47.6100],
+          [-122.1540, 47.6210]
+        ]]
+      }
+    },
+
+
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "bellevue_factoria",
+        "name": "Factoria",
+        "riskLevel": "elevated",
+        "primaryCrimeTypes": ["theft", "motor_vehicle_theft", "burglary"],
+        "notes": "High property crime corridor. Nationally high auto theft rate. NeighborhoodScout 2024."
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-122.1680, 47.5730],
+          [-122.1510, 47.5730],
+          [-122.1510, 47.5620],
+          [-122.1680, 47.5620],
+          [-122.1680, 47.5730]
+        ]]
+      }
+    }
+  ]
+}

@@ -1,0 +1,63 @@
+
+.floatingContainer {
+	position: absolute;
+	top: 15%;
+	left: 60%;
+	transform: translateX(-50%);
+	display: flex;
+	z-index: 1100; /* Leaflet map controls use 1000 */
+	border-radius: 20px;
+	flex-direction: column;
+}
+
+.forecastController {
+	
+	box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.6); ;
+	background-color: var(--bg-primary);
+	color: var(--text-primary);
+	width: 400px;
+	padding: 20px;
+}
+
+.floatingButton {
+	width: shrink;
+}
+
+.scheduleOptionsContainer {
+	margin-bottom: 10px;
+}
+
+.darkHoursDisplay {
+	display: inline;
+}
+
+.darkHoursDisplay span {
+	display: inline-block;
+	font-size: 0.8em;
+}
+
+.error {
+	color: var(--error)
+}
+
+.safetyConfidenceReport {
+	padding: 10px;
+	margin-top: 10px;
+	border: 2px solid var(--border-primary);
+	background-color: var(--border-secondary);
+}
+
+
+.safetyConfidenceReport p {
+	margin-left: 20px;
+}
+
+.safetyConfidenceReport h3 {
+	display: inline;
+	margin-right: 10px;
+}
+
+.message {
+	font-style: italic;
+	font-size: 0.9em;
+}

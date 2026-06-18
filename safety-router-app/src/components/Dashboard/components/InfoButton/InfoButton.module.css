@@ -1,0 +1,111 @@
+/* Core Layout */
+.infoContainer {
+  position: relative;
+  display: inline-block;
+}
+
+.infoButton {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid #ccc;
+  background-color: #f9f9f9;
+  color: #555;
+  font-family: 'Georgia', serif;
+  font-style: italic;
+  font-weight: bold;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.infoButton:hover, .infoButton.active {
+  background-color: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+/* Base Tooltip Style */
+.infoTooltip {
+  position: absolute;
+  width: 200px;
+  background-color: #333;
+  color: #fff ;
+  padding: 12px;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.8);
+  z-index: 100;
+  font-family: sans-serif;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.infoTooltip p {
+  margin: 0;
+}
+
+.tooltipArrow {
+  position: absolute;
+  border-width: 6px;
+  border-style: solid;
+}
+
+/* =======================================================
+   DIRECTION LOGIC
+   ======================================================= */
+
+/* TOP (Default) */
+.tooltip-top {
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+}
+.arrow-top {
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-color: #333 transparent transparent transparent;
+}
+
+/* BOTTOM */
+.tooltip-bottom {
+  top: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+}
+.arrow-bottom {
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-color: transparent transparent #333 transparent;
+}
+
+/* LEFT */
+.tooltip-left {
+  right: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%);
+}
+.arrow-left {
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  border-color: transparent transparent transparent #333;
+}
+
+/* RIGHT */
+.tooltip-right {
+  left: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%);
+}
+.arrow-right {
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  border-color: transparent #333 transparent transparent;
+}

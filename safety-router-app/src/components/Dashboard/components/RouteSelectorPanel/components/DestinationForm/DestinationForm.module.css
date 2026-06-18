@@ -1,0 +1,78 @@
+
+.link:hover {
+	cursor: pointer;
+	text-decoration: underline;
+}
+
+.destinationForm {
+	padding-bottom: 30px;
+}
+
+@media (max-width: 800px) {
+	.destinationForm {
+		padding-bottom: 15px;
+	}
+}
+
+.addStopButton {
+	background-color: #4CAF50;
+	color: white;
+	border: none;
+	padding: 8px 12px;
+	border-radius: 4px;
+	cursor: pointer;
+	margin-top: 8px;
+}
+
+.removeStopButton {
+	margin-left: 10px;
+	background-color: #ff4d4d;
+	color: white;
+	border: none;
+	padding: 6px 10px;
+	border-radius: 4px;
+	cursor: pointer;
+}
+
+.stopsSection {
+	margin-top: 15px;
+}
+
+.stopsSection h4 {
+	margin: 0 0 8px 0;
+}
+
+.stopsContainer {
+	display: flex;
+	align-items: center;
+	margin-bottom: 8px;
+}
+
+.submitRouteButton {
+	margin-top: 20px;
+	padding: 10px 20px;
+	background-color: #2196F3;
+	color: white;
+	border: none;
+	border-radius: 4px;
+	cursor: pointer;
+}
+
+.submitRouteButton.loading {
+	cursor: not-allowed;
+	background-color: #ccc;
+}
+
+.insertLocationButton {
+	background-color: inherit;
+	margin: 10px;
+	margin-left: 25px;
+	display: flex;
+	align-items: center;
+}
+
+.insertLocationButton svg {
+	height: 100%;
+	margin-right: 10px;
+}
+

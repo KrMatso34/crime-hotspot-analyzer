@@ -1,0 +1,37 @@
+
+.suggestionList {
+	position: absolute;
+	top: 100%;
+	left: 0;
+	right: 0;
+	background-color: white;
+	border: 1px solid #ccc;
+	list-style: none;
+	padding: 0;
+	margin: 0;
+	margin-top: 7px;
+	z-index: 1000;
+	box-shadow: 4px 4px 6px rgba(0,0,0,1);
+	width: 550px;
+}
+
+.suggestionButton {
+	padding: 10px;
+	cursor: pointer;
+	border-bottom: 1px solid #eee;
+	color: black;
+	display: flex;
+}
+
+.suggestionButton:hover {
+	background-color: #ddd;
+}
+
+.suggestionButton span {
+	height: 100%;
+}
+
+.suggestionButton svg {
+	height: 100%;
+	margin-right: 7px;
+}

@@ -1,0 +1,19 @@
+
+.dashboard {
+	display: flex;
+	flex-direction: column;
+	height: 100vh;
+}
+
+.content {
+	display: flex;
+	
+	flex: 1;
+	min-height: 0;
+}
+
+@media (max-width: 800px) {
+	.content {
+		flex-direction: column-reverse;
+	}
+}

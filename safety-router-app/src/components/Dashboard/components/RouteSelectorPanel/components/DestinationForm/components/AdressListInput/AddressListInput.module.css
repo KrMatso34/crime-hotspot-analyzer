@@ -1,0 +1,39 @@
+
+.deleteButton {
+	opacity: 0;
+}
+
+.deleteButton:hover {
+	opacity: 1;
+}
+
+.deleteButton.focused {
+	opacity: 1;
+}
+
+.addressInputWrapper {
+	position: relative;
+	display: flex;
+}
+
+.addressInputWrapper input {
+	flex: 1;
+}
+
+.addressInputRow {
+	display: grid;
+	grid-template-columns: 1fr 5fr 1fr;
+	gap: 5px;
+	align-items: center;
+	padding: 12px;
+	margin: 0 0 8px 0;
+	color: white;
+	border-radius: 4px;
+	user-select: none;
+}
+
+.addressListContainer {
+	display: flex;
+	flex-direction: column;
+	padding-right: 20px;
+}
